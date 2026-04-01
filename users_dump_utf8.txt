@@ -1,0 +1,8 @@
+﻿[dotenv@17.2.3] injecting env (20) from dental-backend\.env -- tip: ≡ƒùé∩╕Å backup and recover secrets: https://dotenvx.com/ops
+Total Users: 5
+User: Dr. Arjun Mehta, Email: doctor@smilecenter.com, Role: ADMIN, HasProfile: true, Tenant: 69a40431724fa85fc32d4e4e, IsActive: true
+User: Dr. Priya Iyer, Email: priya@smilecenter.com, Role: DOCTOR, HasProfile: true, Tenant: 69a40431724fa85fc32d4e4e, IsActive: true
+User: Dr. Vikram Nair, Email: vikram@smilecenter.com, Role: DOCTOR, HasProfile: true, Tenant: 69a40431724fa85fc32d4e4e, IsActive: true
+User: Kavya Sharma, Email: reception@smilecenter.com, Role: RECEPTIONIST, HasProfile: false, Tenant: 69a40431724fa85fc32d4e4e, IsActive: true
+User: Dr.Karthik, Email: karthik5kashyapks@gmail.com, Role: ADMIN, HasProfile: false, Tenant: 69ad0b0ae29eaf4dbe12a290, IsActive: true
+Doctors found by query: 3

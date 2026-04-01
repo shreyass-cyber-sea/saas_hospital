@@ -1,0 +1,196 @@
+﻿src/modules/appointments/appointments.controller.ts(89,12): error TS2345: Argument of type '"ADMIN"' is not assignable to parameter of type 'Role'.
+src/modules/appointments/appointments.controller.ts(96,12): error TS2345: Argument of type '"ADMIN"' is not assignable to parameter of type 'Role'.
+src/modules/appointments/appointments.service.ts(49,13): error TS2769: No overload matches this call.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<DoctorLeaveDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'tenantId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/appointments/appointments.service.ts(57,13): error TS2769: No overload matches this call.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<AppointmentDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'tenantId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/appointments/appointments.service.ts(99,17): error TS2769: No overload matches this call.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<AppointmentDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'tenantId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/appointments/appointments.service.ts(124,13): error TS2769: No overload matches this call.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<AppointmentDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'tenantId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/appointments/appointments.service.ts(193,14): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(filter?: _QueryFilter<{ date: Date; _id: ObjectId; type: AppointmentType; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<...> & Paths; ... 367 more ...; "createdBy.validateAll": (validators: (RegExp | ... 1 more ... | ValidatorFunction<...>)[]) => ObjectId; }> | undefined, projection?: ProjectionType<...> | ... 1 more ... | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Type 'ObjectId' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+      Type 'ObjectId' is not assignable to type 'FilterOperators<ObjectId | ObjectId[] | null>'.
+        Types of property 'id' are incompatible.
+          Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'undefined'.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<AppointmentDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/appointments/appointments.service.ts(208,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/appointments/appointments.service.ts(213,9): error TS2322: Type 'ModifyResult<AppointmentDocument>' is not assignable to type 'AppointmentDocument'.
+  Type 'ModifyResult<AppointmentDocument>' is missing the following properties from type 'Appointment': tenantId, patientId, doctorId, chairId, and 13 more.
+src/modules/appointments/appointments.service.ts(225,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/appointments/appointments.service.ts(230,9): error TS2322: Type 'ModifyResult<AppointmentDocument>' is not assignable to type 'AppointmentDocument'.
+  Type 'ModifyResult<AppointmentDocument>' is missing the following properties from type 'Appointment': tenantId, patientId, doctorId, chairId, and 13 more.
+src/modules/appointments/appointments.service.ts(235,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/appointments/appointments.service.ts(240,9): error TS2322: Type 'ModifyResult<AppointmentDocument>' is not assignable to type 'AppointmentDocument'.
+  Type 'ModifyResult<AppointmentDocument>' is missing the following properties from type 'Appointment': tenantId, patientId, doctorId, chairId, and 13 more.
+src/modules/appointments/appointments.service.ts(250,17): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(filter?: _QueryFilter<{ date: Date; _id: ObjectId; type: AppointmentType; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<...> & Paths; ... 367 more ...; "createdBy.validateAll": (validators: (RegExp | ... 1 more ... | ValidatorFunction<...>)[]) => ObjectId; }> | undefined, projection?: ProjectionType<...> | ... 1 more ... | undefined, options?: (QueryOptions<...> & Abortable) | undefined): Query<...>', gave the following error.
+    Type 'ObjectId' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+      Type 'ObjectId' is not assignable to type 'FilterOperators<ObjectId | ObjectId[] | null>'.
+        Types of property 'id' are incompatible.
+          Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'undefined'.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<AppointmentDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'tenantId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/appointments/appointments.service.ts(277,13): error TS2769: No overload matches this call.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<DoctorLeaveDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'tenantId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/appointments/appointments.service.ts(302,52): error TS2769: No overload matches this call.
+  Overload 1 of 6, '(filter?: _QueryFilter<{ date: Date; _id: ObjectId; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<DoctorLeaveDocument, keyof Paths> & Paths; ... 274 more ...; "doctorId.validateAll": (validators: (RegExp | ... 1 more ... | ValidatorFunction<...>)[]) => ObjectId; }> | null | undefined, options?: QueryOptions<...> | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Type 'ObjectId' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+      Type 'ObjectId' is not assignable to type 'FilterOperators<ObjectId | ObjectId[] | null>'.
+        Types of property 'id' are incompatible.
+          Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'undefined'.
+  Overload 2 of 6, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | null | undefined, options?: QueryOptions<DoctorLeaveDocument> | null | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/billing/billing.controller.ts(21,12): error TS2345: Argument of type '"ADMIN"' is not assignable to parameter of type 'Role'.
+src/modules/billing/billing.controller.ts(34,12): error TS2345: Argument of type '"ADMIN"' is not assignable to parameter of type 'Role'.
+src/modules/billing/billing.controller.ts(41,12): error TS2345: Argument of type '"ADMIN"' is not assignable to parameter of type 'Role'.
+src/modules/billing/billing.controller.ts(50,53): error TS1272: A type referenced in a decorated signature must be imported with 'import type' or a namespace import when 'isolatedModules' and 'emitDecoratorMetadata' are enabled.
+src/modules/billing/billing.controller.ts(82,78): error TS1272: A type referenced in a decorated signature must be imported with 'import type' or a namespace import when 'isolatedModules' and 'emitDecoratorMetadata' are enabled.
+src/modules/billing/billing.controller.ts(87,12): error TS2345: Argument of type '"ADMIN"' is not assignable to parameter of type 'Role'.
+src/modules/billing/billing.service.ts(58,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(filter?: _QueryFilter<{ _id: ObjectId; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<InvoiceDocument, keyof Paths> & Paths; ... 384 more ...; "payments.recordedBy": ObjectId; }> | undefined, options?: (CountOptions & ... 2 more ... & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Type 'ObjectId' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+      Type 'ObjectId' is not assignable to type 'FilterOperators<ObjectId | ObjectId[] | null>'.
+        Types of property 'id' are incompatible.
+          Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'undefined'.
+  Overload 2 of 2, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, options?: (CountOptions & Pick<QueryOptions<InvoiceDocument>, "timestamps" | ... 1 more ... | MongooseBaseQueryOptionKeys> & { ...; } & Abortable) | null | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'tenantId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/billing/billing.service.ts(117,43): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(filter?: _QueryFilter<{ name: string; _id: ObjectId; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<ProcedureDocument, keyof Paths> & Paths; ... 251 more ...; taxable: boolean; }> | undefined, projection?: ProjectionType<...> | ... 1 more ... | undefined, options?: (QueryOptions<...> & Abortable) | undefined): Query<...>', gave the following error.
+    Type 'ObjectId' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+      Type 'ObjectId' is not assignable to type 'FilterOperators<ObjectId | ObjectId[] | null>'.
+        Types of property 'id' are incompatible.
+          Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'undefined'.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<ProcedureDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'tenantId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/billing/billing.service.ts(122,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/billing/billing.service.ts(127,9): error TS2322: Type 'ModifyResult<ProcedureDocument>' is not assignable to type 'ProcedureDocument'.
+  Type 'ModifyResult<ProcedureDocument>' is missing the following properties from type 'Procedure': tenantId, name, code, category, and 4 more.
+src/modules/billing/billing.service.ts(131,35): error TS2769: No overload matches this call.
+  Overload 1 of 10, '(filter?: _QueryFilter<{ name: string; _id: ObjectId; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<ProcedureDocument, keyof Paths> & Paths; ... 251 more ...; taxable: boolean; }> | undefined, update?: UpdateQuery<...> | undefined, options?: QueryOptions<...> | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Type 'ObjectId' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+      Type 'ObjectId' is not assignable to type 'FilterOperators<ObjectId | ObjectId[] | null>'.
+        Types of property 'id' are incompatible.
+          Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'undefined'.
+  Overload 2 of 10, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, update?: UpdateQuery<ProcedureDocument> | undefined, options?: QueryOptions<...> | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/billing/billing.service.ts(195,14): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(filter?: _QueryFilter<{ _id: ObjectId; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<InvoiceDocument, keyof Paths> & Paths; ... 384 more ...; "payments.recordedBy": ObjectId; }> | undefined, projection?: ProjectionType<...> | ... 1 more ... | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Type 'ObjectId' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+      Type 'ObjectId' is not assignable to type 'FilterOperators<ObjectId | ObjectId[] | null>'.
+        Types of property 'id' are incompatible.
+          Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'undefined'.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<InvoiceDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/billing/billing.service.ts(205,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/billing/billing.service.ts(213,43): error TS2345: Argument of type 'ModifyResult<InvoiceDocument>' is not assignable to parameter of type 'InvoiceDocument'.
+  Type 'ModifyResult<InvoiceDocument>' is missing the following properties from type 'Invoice': tenantId, invoiceNumber, patientId, appointmentId, and 14 more.
+src/modules/billing/billing.service.ts(217,9): error TS2322: Type 'ModifyResult<InvoiceDocument>' is not assignable to type 'InvoiceDocument'.
+  Type 'ModifyResult<InvoiceDocument>' is missing the following properties from type 'Invoice': tenantId, invoiceNumber, patientId, appointmentId, and 14 more.
+src/modules/billing/billing.service.ts(224,43): error TS2339: Property 'createdAt' does not exist on type 'InvoiceDocument'.
+src/modules/billing/billing.service.ts(260,49): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(filter?: _QueryFilter<{ _id: ObjectId; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<InvoiceDocument, keyof Paths> & Paths; ... 384 more ...; "payments.recordedBy": ObjectId; }> | undefined, projection?: ProjectionType<...> | ... 1 more ... | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Type 'ObjectId' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+      Type 'ObjectId' is not assignable to type 'FilterOperators<ObjectId | ObjectId[] | null>'.
+        Types of property 'id' are incompatible.
+          Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'undefined'.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<InvoiceDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/billing/billing.service.ts(294,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/billing/billing.service.ts(299,9): error TS2322: Type 'ModifyResult<InvoiceDocument>' is not assignable to type 'InvoiceDocument'.
+  Type 'ModifyResult<InvoiceDocument>' is missing the following properties from type 'Invoice': tenantId, invoiceNumber, patientId, appointmentId, and 14 more.
+src/modules/billing/billing.service.ts(303,49): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(filter?: _QueryFilter<{ _id: ObjectId; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<InvoiceDocument, keyof Paths> & Paths; ... 384 more ...; "payments.recordedBy": ObjectId; }> | undefined, projection?: ProjectionType<...> | ... 1 more ... | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Type 'ObjectId' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+      Type 'ObjectId' is not assignable to type 'FilterOperators<ObjectId | ObjectId[] | null>'.
+        Types of property 'id' are incompatible.
+          Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'undefined'.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<InvoiceDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/billing/billing.service.ts(334,13): error TS2769: No overload matches this call.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<AdvancePaymentDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'tenantId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/billing/billing.service.ts(340,49): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(filter?: _QueryFilter<{ _id: ObjectId; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<AdvancePaymentDocument, keyof Paths> & Paths; ... 282 more ...; "payments.recordedBy": ObjectId; }> | undefined, projection?: ProjectionType<...> | ... 1 more ... | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Type 'ObjectId' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+      Type 'ObjectId' is not assignable to type 'FilterOperators<ObjectId | ObjectId[] | null>'.
+        Types of property 'id' are incompatible.
+          Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'undefined'.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<AdvancePaymentDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/patients/patients.service.ts(33,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(filter?: _QueryFilter<{ name: string; _id: ObjectId; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<PatientDocument, keyof Paths> & Paths; ... 295 more ...; "emergencyContact.relation": string; }> | undefined, options?: (CountOptions & ... 2 more ... & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Type 'ObjectId' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+      Type 'ObjectId' is not assignable to type 'FilterOperators<ObjectId | ObjectId[] | null>'.
+        Types of property 'id' are incompatible.
+          Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'undefined'.
+  Overload 2 of 2, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, options?: (CountOptions & Pick<QueryOptions<PatientDocument>, "timestamps" | ... 1 more ... | MongooseBaseQueryOptionKeys> & { ...; } & Abortable) | null | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'tenantId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/patients/patients.service.ts(88,49): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(filter?: _QueryFilter<{ name: string; _id: ObjectId; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<PatientDocument, keyof Paths> & Paths; ... 295 more ...; "emergencyContact.relation": string; }> | undefined, projection?: ProjectionType<...> | ... 1 more ... | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Type 'ObjectId' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+      Type 'ObjectId' is not assignable to type 'FilterOperators<ObjectId | ObjectId[] | null>'.
+        Types of property 'id' are incompatible.
+          Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'undefined'.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<PatientDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/patients/patients.service.ts(102,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/patients/patients.service.ts(107,9): error TS2322: Type 'ModifyResult<PatientDocument>' is not assignable to type 'PatientDocument'.
+  Type 'ModifyResult<PatientDocument>' is missing the following properties from type 'Patient': tenantId, patientId, name, phone, and 15 more.
+src/modules/patients/patients.service.ts(115,17): error TS2769: No overload matches this call.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<ClinicalNoteDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'tenantId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/patients/patients.service.ts(167,23): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(filter?: _QueryFilter<{ _id: ObjectId; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<ClinicalNoteDocument, keyof Paths> & Paths; ... 341 more ...; "prescriptions.instructions": string; }> | undefined, projection?: ProjectionType<...> | ... 1 more ... | undefined, options?: (QueryOptions<...> & Abortable) | undefined): Query<...>', gave the following error.
+    Argument of type '{ tenantId: Types.ObjectId; patientId: Types.ObjectId; }' is not assignable to parameter of type '_QueryFilter<{ _id: ObjectId; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<ClinicalNoteDocument, keyof Paths> & Paths; ... 341 more ...; "prescriptions.instructions": string; }>'.
+      Type '{ tenantId: Types.ObjectId; patientId: Types.ObjectId; }' is not assignable to type '{ _id?: Condition<ApplyBasicQueryCasting<ObjectId>> | undefined; $assertPopulated?: Condition<ApplyBasicQueryCasting<(<Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<...> & Paths)>> | undefined; ... 341 more ...; "prescriptions.instructions"?: Condition<...> | undefined; }'.
+        Types of property 'tenantId' are incompatible.
+          Type 'ObjectId' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+            Type 'ObjectId' is not assignable to type 'FilterOperators<ObjectId | ObjectId[] | null>'.
+              Types of property 'id' are incompatible.
+                Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'undefined'.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<ClinicalNoteDocument> | null | undefined, options?: (QueryOptions<...> & Abortable) | undefined): Query<...>', gave the following error.
+    Argument of type '{ tenantId: Types.ObjectId; patientId: Types.ObjectId; }' is not assignable to parameter of type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+      Type '{ tenantId: ObjectId; patientId: ObjectId; }' is missing the following properties from type 'Query<any, any, {}, unknown, "find", Record<string, never>>': _mongooseOptions, exec, $where, all, and 94 more.
+src/modules/patients/patients.service.ts(172,51): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(filter?: _QueryFilter<{ _id: ObjectId; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<ClinicalNoteDocument, keyof Paths> & Paths; ... 341 more ...; "prescriptions.instructions": string; }> | undefined, options?: (CountOptions & ... 2 more ... & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Argument of type '{ tenantId: Types.ObjectId; patientId: Types.ObjectId; }' is not assignable to parameter of type '_QueryFilter<{ _id: ObjectId; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<ClinicalNoteDocument, keyof Paths> & Paths; ... 341 more ...; "prescriptions.instructions": string; }>'.
+      Type '{ tenantId: Types.ObjectId; patientId: Types.ObjectId; }' is not assignable to type '{ _id?: Condition<ApplyBasicQueryCasting<ObjectId>> | undefined; $assertPopulated?: Condition<ApplyBasicQueryCasting<(<Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<...> & Paths)>> | undefined; ... 341 more ...; "prescriptions.instructions"?: Condition<...> | undefined; }'.
+        Types of property 'tenantId' are incompatible.
+          Type 'ObjectId' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+            Type 'ObjectId' is not assignable to type 'FilterOperators<ObjectId | ObjectId[] | null>'.
+              Types of property 'id' are incompatible.
+                Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'undefined'.
+  Overload 2 of 2, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, options?: (CountOptions & Pick<QueryOptions<ClinicalNoteDocument>, "timestamps" | ... 1 more ... | MongooseBaseQueryOptionKeys> & { ...; } & Abortable) | null | undefined): Query<...>', gave the following error.
+    Argument of type '{ tenantId: Types.ObjectId; patientId: Types.ObjectId; }' is not assignable to parameter of type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+      Type '{ tenantId: ObjectId; patientId: ObjectId; }' is missing the following properties from type 'Query<any, any, {}, unknown, "find", Record<string, never>>': _mongooseOptions, exec, $where, all, and 94 more.
+src/modules/patients/patients.service.ts(186,17): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and '_id' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/patients/patients.service.ts(194,9): error TS2322: Type 'ModifyResult<ClinicalNoteDocument>' is not assignable to type 'ClinicalNoteDocument'.
+  Type 'ModifyResult<ClinicalNoteDocument>' is missing the following properties from type 'ClinicalNote': tenantId, patientId, appointmentId, doctorId, and 8 more.
+src/modules/patients/patients.service.ts(219,17): error TS2769: No overload matches this call.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<PatientDocumentDoc> | null | undefined, options?: (QueryOptions<...> & Abortable) | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'tenantId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/modules/storage/storage.controller.ts(30,39): error TS2694: Namespace 'global.Express' has no exported member 'Multer'.

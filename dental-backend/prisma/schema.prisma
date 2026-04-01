@@ -1,0 +1,298 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// === Core Models ===
+
+model Tenant {
+  id              String           @id @default(uuid())
+  name            String
+  slug            String           @unique
+  address         Json?            // { street, city, state, zip }
+  phone           String?
+  email           String?
+  logo            String?
+  subscription    TenantSubscription?
+  isActive        Boolean          @default(true)
+  settings        Json?            // { workingHours, slotDuration, etc }
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  users           User[]
+  patients        Patient[]
+  appointments    Appointment[]
+  invoices        Invoice[]
+  procedures      Procedure[]
+  clinicalNotes   ClinicalNote[]
+  doctorLeaves    DoctorLeave[]
+  advancePayments AdvancePayment[]
+  documents       PatientDocument[]
+}
+
+enum TenantSubscription {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+model User {
+  id               String   @id @default(uuid())
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  name             String
+  email            String   @unique
+  password         String?
+  role             Role     @default(RECEPTIONIST)
+  phone            String?
+  avatar           String?
+  isActive         Boolean  @default(true)
+  doctorProfile    Json?    // { specializations: [], experience: 0, etc }
+  lastLogin        DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  appointmentsAsDoctor   Appointment[] @relation("DoctorAppointments")
+  appointmentsAsCreator  Appointment[] @relation("CreatorAppointments")
+  invoicesAsDoctor       Invoice[]     @relation("DoctorInvoices")
+  invoicesAsCreator      Invoice[]     @relation("CreatorInvoices")
+  clinicalNotes          ClinicalNote[]
+  doctorLeaves           DoctorLeave[]
+  paymentRecords         InvoicePayment[]
+}
+
+enum Role {
+  ADMIN
+  DOCTOR
+  RECEPTIONIST
+  STAFF
+}
+
+// === Patient Management ===
+
+model Patient {
+  id               String    @id @default(uuid())
+  tenantId         String
+  tenant           Tenant    @relation(fields: [tenantId], references: [id])
+  patientId        String    @unique // Human readable ID (e.g. PAT-001)
+  name             String
+  email            String?
+  phone            String
+  gender           Gender?
+  dateOfBirth      DateTime?
+  address          String?
+  bloodGroup       String?
+  photoUrl         String?
+  medicalHistory   String[]
+  emergencyContact Json?     // { name, relation, phone }
+  totalVisits      Int       @default(0)
+  lastVisit        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  appointments     Appointment[]
+  clinicalNotes    ClinicalNote[]
+  documents        PatientDocument[]
+  invoices         Invoice[]
+  advancePayments  AdvancePayment[]
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model PatientDocument {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  name        String
+  category    String   @default("report") // report, prescription, xray, scan, other
+  fileUrl     String
+  fileType    String?
+  fileSize    Int?
+  notes       String?
+  uploadedAt  DateTime @default(now())
+}
+
+model ClinicalNote {
+  id               String   @id @default(uuid())
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  patientId        String
+  patient          Patient  @relation(fields: [patientId], references: [id])
+  doctorId         String
+  doctor           User     @relation(fields: [doctorId], references: [id])
+  appointmentId    String?
+  chiefComplaint   String?
+  findings         String?
+  diagnosis        String?
+  treatmentPlan    String?
+  prescriptions    Json[]   // [{ medicine, dosage, frequency, duration }]
+  vitals           Json?    // { bp, weight, pulse, etc }
+  clinicalFindings Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// === Appointments ===
+
+model Appointment {
+  id              String            @id @default(uuid())
+  tenantId        String
+  tenant          Tenant            @relation(fields: [tenantId], references: [id])
+  patientId       String
+  patient         Patient           @relation(fields: [patientId], references: [id])
+  doctorId        String
+  doctor          User              @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  date            DateTime
+  startTime       String            // HH:mm
+  endTime         String?           // HH:mm
+  status          AppointmentStatus @default(SCHEDULED)
+  type            String?           // Consultation, Follow-up, Routine Check, Procedure
+  chiefComplaint  String?
+  tokenNumber     Int?
+  cancelledReason String?
+  createdByUserId String
+  createdByUser   User              @relation("CreatorAppointments", fields: [createdByUserId], references: [id])
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  invoices        Invoice[]
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+  IN_PROGRESS
+}
+
+model DoctorLeave {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  doctorId  String
+  doctor    User     @relation(fields: [doctorId], references: [id])
+  date      DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+}
+
+// === Billing ===
+
+model Procedure {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  name            String
+  code            String?
+  category        String?
+  defaultPrice    Float    @default(0)
+  defaultDuration Int      @default(30)
+  taxable         Boolean  @default(true)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  invoiceItems    InvoiceItem[]
+}
+
+model Invoice {
+  id              String        @id @default(uuid())
+  tenantId        String
+  tenant          Tenant        @relation(fields: [tenantId], references: [id])
+  patientId       String
+  patient         Patient       @relation(fields: [patientId], references: [id])
+  doctorId        String
+  doctor          User          @relation("DoctorInvoices", fields: [doctorId], references: [id])
+  appointmentId   String?
+  appointment     Appointment?  @relation(fields: [appointmentId], references: [id])
+  invoiceNumber   String        @unique
+  status          InvoiceStatus @default(DRAFT)
+  subtotal        Float         @default(0)
+  totalDiscount   Float         @default(0)
+  totalTax        Float         @default(0)
+  grandTotal      Float         @default(0)
+  paidAmount      Float         @default(0)
+  pendingAmount   Float         @default(0)
+  advanceUsed     Float         @default(0)
+  notes           String?
+  pdfUrl          String?
+  createdByUserId String
+  createdByUser   User          @relation("CreatorInvoices", fields: [createdByUserId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  lineItems       InvoiceItem[]
+  payments        InvoicePayment[]
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  PARTIALLY_PAID
+  CANCELLED
+  REFUNDED
+}
+
+model InvoiceItem {
+  id              String     @id @default(uuid())
+  invoiceId       String
+  invoice         Invoice    @relation(fields: [invoiceId], references: [id])
+  procedureId     String?
+  procedure       Procedure? @relation(fields: [procedureId], references: [id])
+  description     String
+  quantity        Int        @default(1)
+  unitPrice       Float      @default(0)
+  discount        Float      @default(0)
+  discountPercent Float      @default(0)
+  taxPercent      Float      @default(18)
+  taxAmount       Float      @default(0)
+  totalAmount     Float      @default(0)
+}
+
+model InvoicePayment {
+  id               String      @id @default(uuid())
+  invoiceId        String
+  invoice          Invoice     @relation(fields: [invoiceId], references: [id])
+  amount           Float
+  mode             PaymentMode @default(CASH)
+  reference        String?
+  paidAt           DateTime    @default(now())
+  recordedByUserId String
+  recordedByUser   User        @relation(fields: [recordedByUserId], references: [id])
+}
+
+enum PaymentMode {
+  CASH
+  CARD
+  UPI
+  BANK_TRANSFER
+  OTHER
+}
+
+model AdvancePayment {
+  id            String      @id @default(uuid())
+  tenantId      String
+  tenant        Tenant      @relation(fields: [tenantId], references: [id])
+  patientId     String
+  patient       Patient     @relation(fields: [patientId], references: [id])
+  amount        Float
+  balanceAmount Float
+  usedAmount    Float       @default(0)
+  mode          PaymentMode @default(CASH)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
