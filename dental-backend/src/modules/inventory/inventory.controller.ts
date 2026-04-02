@@ -14,7 +14,7 @@ import { InventoryService } from './inventory.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-import { TransactionType } from './inventory.schema';
+import { TransactionType } from '@prisma/client';
 
 @ApiTags('Inventory')
 @ApiBearerAuth()

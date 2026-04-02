@@ -31,6 +31,7 @@ import {
 } from '../../components/ui/select';
 import { useCalendarAppointments, useCreateAppointment, useAvailableSlots } from '../../hooks/useAppointments';
 import { useAuthStore } from '../../hooks/useAuthStore';
+import { useDoctors } from '../../hooks/useBilling';
 import api from '../../lib/api';
 import { useUploadFile } from '../../hooks/useStorage';
 
@@ -59,7 +60,7 @@ interface CalendarEvent {
 
 
 interface Doctor {
-    _id: string;
+    id: string;
     name: string;
     email: string;
     role: string;
@@ -70,9 +71,9 @@ interface Doctor {
 }
 
 interface AppointmentDetail {
-    _id: string;
-    patientId: { _id: string; name: string; phone: string; email?: string; photoUrl?: string };
-    doctorId: { _id: string; name: string };
+    id: string;
+    patient: { id: string; name: string; phone: string; email?: string; photoUrl?: string };
+    doctor: { id: string; name: string };
     date: string;
     startTime: string;
     endTime: string;
@@ -138,7 +139,6 @@ export function AppointmentsCalendar() {
     const [newPatientPhone, setNewPatientPhone] = useState('');
     const [selectedDoctor, setSelectedDoctor] = useState<string>('');
     const [selectedDoctorObj, setSelectedDoctorObj] = useState<Doctor | null>(null);
-    const [doctors, setDoctors] = useState<Doctor[]>([]);
     const [selectedTime, setSelectedTime] = useState<string>('');
     const [selectedChair, setSelectedChair] = useState<string>('');
     const [appointmentType, setAppointmentType] = useState<string>('CONSULTATION');
@@ -158,6 +158,18 @@ export function AppointmentsCalendar() {
     const streamRef = useRef<MediaStream | null>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const uploadFile = useUploadFile();
+    const { data: rawDoctors = [] } = useDoctors();
+    const doctors = useMemo<Doctor[]>(
+        () =>
+            (Array.isArray(rawDoctors) ? rawDoctors : []).map((doctor: any) => ({
+                id: doctor.id,
+                name: doctor.name,
+                email: doctor.email,
+                role: doctor.role,
+                doctorProfile: doctor.doctorProfile,
+            })),
+        [rawDoctors],
+    );
 
     // Patient search effect
     useEffect(() => {
@@ -166,7 +178,8 @@ export function AppointmentsCalendar() {
                 setIsSearchingPatients(true);
                 try {
                     const res = await api.get('/patients/search', { params: { q: patientSearchQuery } });
-                    setPatientSearchResults(Array.isArray(res.data) ? res.data : (res.data?.data || []));
+                    const payload = res.data?.data || res.data;
+                    setPatientSearchResults(Array.isArray(payload) ? payload : []);
                 } catch (error) {
                     console.error('Patient search failed:', error);
                 } finally {
@@ -252,7 +265,7 @@ export function AppointmentsCalendar() {
             api.get(`/patients/${prefilledPatientId}`).then(res => {
                 const p = res.data?.data || res.data;
                 if (p) {
-                    setSelectedPatientId(p._id);
+                    setSelectedPatientId(p.id);
                     setSelectedPatientName(p.name);
                     setPatientEmail(p.email || '');
                     setIsExistingPatientMode(true);
@@ -276,19 +289,6 @@ export function AppointmentsCalendar() {
     const { data: appointments = [] } = useCalendarAppointments(startDate, endDate);
     const createAppointment = useCreateAppointment();
 
-    useEffect(() => {
-        const fetchDoctors = async () => {
-            try {
-                const res = await api.get('/users/doctors');
-                const doctorList = Array.isArray(res.data) ? res.data : (res.data.data || []);
-                setDoctors(doctorList);
-            } catch (error) {
-                console.error('Failed to fetch doctors:', error);
-            }
-        };
-        if (token) fetchDoctors();
-    }, [token]);
-
     const { data: slotData } = useAvailableSlots(selectedDoctor, selectedDate || '', 30);
     const availableSlots: string[] = slotData?.available || [];
     const bookedSlots: string[] = slotData?.booked || [];
@@ -302,13 +302,13 @@ export function AppointmentsCalendar() {
             start.setHours(parseInt(startHour), parseInt(startMin), 0, 0);
             const end = new Date(apptDate);
             end.setHours(parseInt(endHour), parseInt(endMin), 0, 0);
-            const patient = appt.patientId;
-            const doctor = appt.doctorId;
+            const patient = appt.patient;
+            const doctor = appt.doctor;
             const patientName = patient?.name || 'Unknown Patient';
             const doctorName = doctor?.name || 'Unknown Doctor';
             const type = (appt.type as string) || 'Appointment';
             return {
-                id: appt._id,
+                id: appt.id,
                 title: `${type} - ${patientName}`,
                 start, end,
                 resource: doctorName,
@@ -338,9 +338,9 @@ export function AppointmentsCalendar() {
             setSelectedAppointment(event.rawAppointment);
         } else {
             setSelectedAppointment({
-                _id: event.id || '',
-                patientId: { _id: '', name: event.patientName || '', phone: event.phone || '', email: event.email, photoUrl: event.photoUrl },
-                doctorId: { _id: '', name: event.doctorName || '' },
+                id: event.id || '',
+                patient: { id: '', name: event.patientName || '', phone: event.phone || '', email: event.email, photoUrl: event.photoUrl },
+                doctor: { id: '', name: event.doctorName || '' },
                 date: format(event.start, 'yyyy-MM-dd'),
                 startTime: format(event.start, 'HH:mm'),
                 endTime: format(event.end, 'HH:mm'),
@@ -425,7 +425,7 @@ export function AppointmentsCalendar() {
 
     const handleDoctorChange = (doctorId: string) => {
         setSelectedDoctor(doctorId);
-        const doc = doctors.find(d => d._id === doctorId) || null;
+        const doc = doctors.find(d => d.id === doctorId) || null;
         setSelectedDoctorObj(doc);
         setSelectedTime('');
     };
@@ -457,7 +457,7 @@ export function AppointmentsCalendar() {
                     photoUrl: photoUrl || undefined,
                 });
                 const created = newPatRes.data?.data || newPatRes.data;
-                patientId = created._id;
+                patientId = created.id;
                 finalPatientName = created.name;
             }
 
@@ -641,10 +641,10 @@ export function AppointmentsCalendar() {
                                                     <div className="divide-y divide-gray-100">
                                                         {patientSearchResults.map((p) => (
                                                             <div 
-                                                                key={p._id} 
+                                                                key={p.id} 
                                                                 className="p-3 hover:bg-blue-50 cursor-pointer flex items-center justify-between transition-colors"
                                                                 onClick={() => {
-                                                                    setSelectedPatientId(p._id);
+                                                                    setSelectedPatientId(p.id);
                                                                     setSelectedPatientName(p.name);
                                                                     setPatientEmail(p.email || '');
                                                                     setPatientSearchQuery('');
@@ -762,7 +762,7 @@ export function AppointmentsCalendar() {
                                         <SelectTrigger className="bg-gray-50 border-gray-200"><SelectValue placeholder="Choose a doctor..." /></SelectTrigger>
                                         <SelectContent>
                                             {doctors.map((doctor) => (
-                                                <SelectItem key={doctor._id} value={doctor._id}>{doctor.name}</SelectItem>
+                                                <SelectItem key={doctor.id} value={doctor.id}>{doctor.name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -778,7 +778,13 @@ export function AppointmentsCalendar() {
                                         <Select value={selectedTime} onValueChange={setSelectedTime}>
                                             <SelectTrigger className="bg-gray-50 border-gray-200"><SelectValue placeholder="Select Time" /></SelectTrigger>
                                             <SelectContent>
-                                                {availableSlots.map(slot => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)}
+                                                {availableSlots.length > 0 ? (
+                                                    availableSlots.map(slot => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)
+                                                ) : (
+                                                    <div className="px-3 py-2 text-sm text-slate-500">
+                                                        {selectedDoctor && selectedDate ? 'No available slots for this date' : 'Select doctor and date first'}
+                                                    </div>
+                                                )}
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -834,19 +840,19 @@ export function AppointmentsCalendar() {
                     {selectedAppointment && (
                         <div className="flex flex-col">
                             <div className="bg-blue-600 p-6 text-white">
-                                <h2 className="text-xl font-bold">{selectedAppointment.patientId.name}</h2>
+                                <h2 className="text-xl font-bold">{selectedAppointment.patient.name}</h2>
                                 <p className="text-blue-100">{format(new Date(selectedAppointment.date), 'PPPP')}</p>
                             </div>
                             <div className="p-6 space-y-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold">{selectedAppointment.patientId.name.charAt(0)}</div>
+                                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold">{selectedAppointment.patient.name.charAt(0)}</div>
                                     <div>
-                                        <p className="font-semibold">{selectedAppointment.patientId.name}</p>
-                                        <p className="text-sm text-gray-500">{selectedAppointment.patientId.phone}</p>
+                                        <p className="font-semibold">{selectedAppointment.patient.name}</p>
+                                        <p className="text-sm text-gray-500">{selectedAppointment.patient.phone}</p>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 pt-2">
-                                    <div><p className="text-xs text-gray-400 uppercase">Doctor</p><p className="font-medium text-sm">Dr. {selectedAppointment.doctorId.name}</p></div>
+                                    <div><p className="text-xs text-gray-400 uppercase">Doctor</p><p className="font-medium text-sm">Dr. {selectedAppointment.doctor.name}</p></div>
                                     <div><p className="text-xs text-gray-400 uppercase">Time</p><p className="font-medium text-sm">{selectedAppointment.startTime} - {selectedAppointment.endTime}</p></div>
                                     <div><p className="text-xs text-gray-400 uppercase">Type</p><p className="font-medium text-sm">{selectedAppointment.type}</p></div>
                                     <div><p className="text-xs text-gray-400 uppercase">Status</p><p className="font-medium text-sm">{selectedAppointment.status}</p></div>
@@ -862,9 +868,9 @@ export function AppointmentsCalendar() {
                                     <Button
                                         className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                                         onClick={() => {
-                                            const phone = selectedAppointment.patientId.phone.replace(/\D/g, '');
+                                            const phone = selectedAppointment.patient.phone.replace(/\D/g, '');
                                             const dateFormatted = format(new Date(selectedAppointment.date), 'PPPP');
-                                            const message = `Hello ${selectedAppointment.patientId.name},\n\nThis is a reminder for your dental appointment.\n👨‍⚕️ Doctor: Dr. ${selectedAppointment.doctorId.name}\n📅 Date: ${dateFormatted}\n⏰ Time: ${selectedAppointment.startTime} - ${selectedAppointment.endTime}\n🩺 Type: ${selectedAppointment.type}\n\nPlease arrive 10 minutes early.`;
+                                            const message = `Hello ${selectedAppointment.patient.name},\n\nThis is a reminder for your dental appointment.\n👨‍⚕️ Doctor: Dr. ${selectedAppointment.doctor.name}\n📅 Date: ${dateFormatted}\n⏰ Time: ${selectedAppointment.startTime} - ${selectedAppointment.endTime}\n🩺 Type: ${selectedAppointment.type}\n\nPlease arrive 10 minutes early.`;
                                             window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
                                         }}
                                     >
@@ -874,7 +880,7 @@ export function AppointmentsCalendar() {
                                         className="flex-1 bg-blue-600 hover:bg-blue-700"
                                         onClick={() => {
                                             setIsDetailDialogOpen(false);
-                                            navigate(`/patients/${selectedAppointment.patientId._id}`);
+                                            navigate(`/patients/${selectedAppointment.patient.id}`);
                                         }}
                                     >
                                         <User className="mr-2 h-4 w-4" /> View Patient

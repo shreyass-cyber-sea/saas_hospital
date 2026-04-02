@@ -1,132 +1,81 @@
-import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsArray,
-  IsDateString,
-  IsMongoId,
-  IsNumber,
-  Min,
-} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AppointmentStatus, AppointmentType } from '../appointment.schema';
+import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { Type } from 'class-transformer';
+import { AppointmentStatus } from '@prisma/client';
+
+export enum AppointmentType {
+  CONSULTATION = 'CONSULTATION',
+  FOLLOW_UP = 'FOLLOW_UP',
+  ROUTINE_CHECK = 'ROUTINE_CHECK',
+  PROCEDURE = 'PROCEDURE',
+}
 
 export class CreateAppointmentDto {
-  @ApiProperty({ description: 'Patient MongoDB ID' })
-  @IsMongoId()
+  @ApiProperty({ description: 'Patient ID' })
+  @IsString()
   patientId: string;
 
-  @ApiProperty({ description: 'Doctor (User) MongoDB ID' })
-  @IsMongoId()
+  @ApiProperty({ description: 'Doctor ID' })
+  @IsString()
   doctorId: string;
 
-  @ApiPropertyOptional({ description: 'Chair ID e.g. CHAIR-1' })
-  @IsOptional()
+  @ApiProperty({ description: 'Date (YYYY-MM-DD)' })
   @IsString()
-  chairId?: string;
-
-  @ApiProperty({ description: 'Date of appointment (YYYY-MM-DD)' })
-  @IsDateString()
   date: string;
 
-  @ApiProperty({ description: 'Start time e.g. 10:30' })
+  @ApiProperty({ description: 'Start time (HH:MM)' })
   @IsString()
   startTime: string;
 
-  @ApiProperty({ description: 'End time e.g. 11:00' })
+  @ApiPropertyOptional({ description: 'End time (HH:MM)' })
+  @IsOptional()
   @IsString()
-  endTime: string;
+  endTime?: string;
 
-  @ApiPropertyOptional({ description: 'Duration in minutes', default: 30 })
+  @ApiPropertyOptional({ description: 'Appointment type' })
   @IsOptional()
-  @IsNumber()
-  @Min(5)
-  duration?: number;
+  @IsString()
+  type?: AppointmentType | string;
 
-  @ApiPropertyOptional({
-    enum: AppointmentType,
-    default: AppointmentType.CONSULTATION,
-  })
-  @IsOptional()
-  @IsEnum(AppointmentType)
-  type?: AppointmentType;
-
-  @ApiPropertyOptional({ description: 'Planned procedures', type: [String] })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  procedures?: string[];
-
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Chief complaint' })
   @IsOptional()
   @IsString()
   chiefComplaint?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  notes?: string;
 }
 
 export class UpdateAppointmentDto {
-  @ApiPropertyOptional({ enum: AppointmentStatus })
+  @ApiPropertyOptional({ enum: AppointmentStatus, description: 'Status' })
   @IsOptional()
   @IsEnum(AppointmentStatus)
   status?: AppointmentStatus;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  notes?: string;
-
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Cancellation reason' })
   @IsOptional()
   @IsString()
   cancelledReason?: string;
-
-  @ApiPropertyOptional({ description: 'New chair ID' })
-  @IsOptional()
-  @IsString()
-  chairId?: string;
-
-  @ApiPropertyOptional({ type: [String] })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  procedures?: string[];
 }
 
 export class UpdateStatusDto {
-  @ApiProperty({ enum: AppointmentStatus })
+  @ApiProperty({ enum: AppointmentStatus, description: 'Status' })
   @IsEnum(AppointmentStatus)
   status: AppointmentStatus;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Cancellation reason' })
   @IsOptional()
   @IsString()
   cancelledReason?: string;
 }
 
-export class GetSlotsDto {
-  @ApiProperty({ description: 'Doctor (User) MongoDB ID' })
-  @IsMongoId()
-  doctorId: string;
-
-  @ApiProperty({ description: 'Date (YYYY-MM-DD)' })
-  @IsDateString()
-  date: string;
-}
-
 export class CreateDoctorLeaveDto {
-  @ApiProperty()
-  @IsMongoId()
+  @ApiProperty({ description: 'Doctor ID' })
+  @IsString()
   doctorId: string;
 
-  @ApiProperty({ description: 'Date to block (YYYY-MM-DD)' })
-  @IsDateString()
+  @ApiProperty({ description: 'Leave date (YYYY-MM-DD)' })
+  @IsString()
   date: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Reason for leave' })
   @IsOptional()
   @IsString()
   reason?: string;

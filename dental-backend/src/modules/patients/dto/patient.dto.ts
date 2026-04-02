@@ -1,96 +1,153 @@
-import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsArray,
-  IsDateString,
-  IsBoolean,
-  IsMongoId,
-  IsEmail,
-} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Gender } from '../patient.schema';
-
-class AddressDto {
-  @ApiPropertyOptional() @IsOptional() @IsString() street?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() city?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() pincode?: string;
-}
-
-class EmergencyContactDto {
-  @ApiPropertyOptional() @IsOptional() @IsString() name?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() relation?: string;
-}
+import { IsString, IsOptional, IsEmail, IsDateString } from 'class-validator';
+import { Gender } from '@prisma/client';
 
 export class CreatePatientDto {
-  @ApiProperty() @IsString() name: string;
-  @ApiProperty() @IsString() phone: string;
+  @ApiProperty()
+  @IsString()
+  name: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsEmail() email?: string;
-  @ApiPropertyOptional() @IsOptional() @IsDateString() dateOfBirth?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiProperty()
+  @IsString()
+  phone: string;
+
   @ApiPropertyOptional({ enum: Gender })
   @IsOptional()
-  @IsEnum(Gender)
-  gender?: Gender;
-  @ApiPropertyOptional() @IsOptional() address?: AddressDto;
-  @ApiPropertyOptional() @IsOptional() @IsString() bloodGroup?: string;
+  @IsString()
+  gender?: Gender | string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  dateOfBirth?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  address?: string | { street?: string; city?: string; pincode?: string };
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  bloodGroup?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  photoUrl?: string;
+
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
   allergies?: string[];
-  @ApiPropertyOptional() @IsOptional() @IsString() medicalHistory?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() abhaId?: string;
-  @ApiPropertyOptional() @IsOptional() emergencyContact?: EmergencyContactDto;
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() whatsappOptIn?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsString() photoUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  medicalHistory?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  emergencyContact?: Record<string, string>;
 }
 
 export class UpdatePatientDto {
-  @ApiPropertyOptional() @IsOptional() @IsString() name?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
-  @ApiPropertyOptional() @IsOptional() @IsEmail() email?: string;
-  @ApiPropertyOptional() @IsOptional() @IsDateString() dateOfBirth?: string;
-  @ApiPropertyOptional({ enum: Gender })
+  @ApiPropertyOptional()
   @IsOptional()
-  @IsEnum(Gender)
-  gender?: Gender;
-  @ApiPropertyOptional() @IsOptional() address?: AddressDto;
-  @ApiPropertyOptional() @IsOptional() @IsString() bloodGroup?: string;
-  @ApiPropertyOptional({ type: [String] })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  allergies?: string[];
-  @ApiPropertyOptional() @IsOptional() @IsString() medicalHistory?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() abhaId?: string;
-  @ApiPropertyOptional() @IsOptional() emergencyContact?: EmergencyContactDto;
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() whatsappOptIn?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() isActive?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsString() photoUrl?: string;
-}
-
-export class AddDocumentDto {
-  @ApiProperty() @IsString() fileName: string;
-  @ApiProperty({ enum: ['xray', 'report', 'consent', 'other'] })
   @IsString()
-  fileType: string;
-  @ApiProperty() @IsString() fileUrl: string;
-  @ApiPropertyOptional() @IsOptional() @IsMongoId() appointmentId?: string;
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  dateOfBirth?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  gender?: Gender | string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  address?: string | { street?: string; city?: string; pincode?: string };
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  bloodGroup?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  photoUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  emergencyContact?: Record<string, string>;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  medicalHistory?: string;
 }
 
 export class AddClinicalNoteDto {
-  @ApiProperty() @IsMongoId() doctorId: string;
-  @ApiPropertyOptional() @IsOptional() @IsMongoId() appointmentId?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() chiefComplaint?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() clinicalFindings?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() diagnosis?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() treatmentDone?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() treatmentPlan?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  chiefComplaint?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  clinicalFindings?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  diagnosis?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  treatmentPlan?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  doctorId?: string;
+
   @ApiPropertyOptional({ type: [Object] })
   @IsOptional()
-  @IsArray()
-  prescriptions?: object[];
-  @ApiPropertyOptional() @IsOptional() toothChart?: Record<string, unknown>;
+  prescriptions?: Record<string, unknown>[];
+}
+
+export class AddDocumentDto {
+  @ApiProperty()
+  @IsString()
+  fileName: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  fileType?: string;
+
+  @ApiProperty()
+  @IsString()
+  fileUrl: string;
 }

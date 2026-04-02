@@ -6,14 +6,17 @@ import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
 import { Dashboard } from './pages/dashboard/Dashboard';
 import { AppointmentsCalendar } from './pages/appointments/AppointmentsCalendar';
+import { AppointmentDetail } from './pages/appointments/AppointmentDetail';
 import { PatientDirectory } from './pages/patients/PatientDirectory';
 import { NewPatient } from './pages/patients/NewPatient';
 import { PatientProfile } from './pages/patients/PatientProfile';
+import { PatientNotes } from './pages/patients/PatientNotes';
 import { BillingList } from './pages/billing/BillingList';
 import { NewInvoice } from './pages/billing/NewInvoice';
 import { InvoiceDetails } from './pages/billing/InvoiceDetails';
 import { EditInvoice } from './pages/billing/EditInvoice';
 import { InventoryList } from './pages/inventory/InventoryList';
+import { LabCases } from './pages/inventory/LabCases';
 import { ReportsView } from './pages/reports/ReportsView';
 import { SettingsView } from './pages/settings/SettingsView';
 
@@ -62,14 +65,14 @@ export default function App() {
 
           <Route path="appointments">
             <Route index element={<AppointmentsCalendar />} />
-            <Route path=":id" element={<div>Appointment Details</div>} />
+            <Route path=":id" element={<AppointmentDetail />} />
           </Route>
 
           <Route path="patients">
             <Route index element={<PatientDirectory />} />
             <Route path="new" element={<NewPatient />} />
             <Route path=":id" element={<PatientProfile />} />
-            <Route path=":id/notes" element={<div>Patient Notes</div>} />
+            <Route path=":id/notes" element={<PatientNotes />} />
           </Route>
 
           <Route path="billing">
@@ -81,7 +84,7 @@ export default function App() {
 
           <Route path="inventory">
             <Route index element={<InventoryList />} />
-            <Route path="lab-cases" element={<div>Lab Cases</div>} />
+            <Route path="lab-cases" element={<LabCases />} />
           </Route>
 
           <Route path="reports" element={<ReportsView />} />

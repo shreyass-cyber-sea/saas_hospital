@@ -61,7 +61,7 @@ export function NewInvoice() {
     // Set prefill patient name from patient list
     useEffect(() => {
         if (prefillPatientId && Array.isArray(patients) && patients.length > 0) {
-            const p: any = patients.find((x: any) => x._id === prefillPatientId);
+            const p: any = patients.find((x: any) => (x.id ?? x._id) === prefillPatientId);
             if (p) setPrefillPatientName(p.name);
         }
     }, [prefillPatientId, patients]);
@@ -92,7 +92,7 @@ export function NewInvoice() {
                 const updated = { ...item, ...updates };
                 // If procedure changed, update price and description
                 if (updates.procedureId) {
-                    const proc = procedures.find((p: any) => p._id === updates.procedureId);
+                    const proc = procedures.find((p: any) => (p.id ?? p._id) === updates.procedureId);
                     if (proc) {
                         updated.description = proc.name;
                         updated.unitPrice = proc.basePrice || 0;
@@ -126,7 +126,7 @@ export function NewInvoice() {
             };
 
             const result = await createInvoice.mutateAsync(invoiceData);
-            const invoiceId = result?._id || result?.data?._id;
+            const invoiceId = result?.id || result?._id || result?.data?.id || result?.data?._id;
             if (invoiceId) {
                 await issueInvoice.mutateAsync(invoiceId);
             }
@@ -172,7 +172,7 @@ export function NewInvoice() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {patients.map((p: any) => (
-                                        <SelectItem key={p._id} value={p._id}>
+                                        <SelectItem key={p.id ?? p._id} value={p.id ?? p._id}>
                                             <div className="flex flex-col items-start">
                                                 <span className="font-medium">{p.name}</span>
                                                 <span className="text-xs text-slate-400">{p.phone}</span>
@@ -192,7 +192,7 @@ export function NewInvoice() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {doctors.map((d: any) => (
-                                        <SelectItem key={d._id} value={d._id}>
+                                        <SelectItem key={d.id ?? d._id} value={d.id ?? d._id}>
                                             {d.name} ({d.role})
                                         </SelectItem>
                                     ))}
@@ -254,7 +254,7 @@ export function NewInvoice() {
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {procedures.map((p: any) => (
-                                                            <SelectItem key={p._id} value={p._id}>
+                                                            <SelectItem key={p.id ?? p._id} value={p.id ?? p._id}>
                                                                 {p.name}
                                                             </SelectItem>
                                                         ))}

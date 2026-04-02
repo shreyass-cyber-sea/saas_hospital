@@ -1,160 +1,155 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { Invoice } from '../billing/invoice.schema';
-import { Appointment } from '../appointments/appointment.schema';
-import { Patient } from '../patients/patient.schema';
-import { StockTransaction } from '../inventory/inventory.schema';
-import { InventoryItem } from '../inventory/inventory.schema';
-import { LabCase } from '../inventory/inventory.schema';
+import { PrismaService } from '../database/prisma.service';
+import { InvoiceStatus, AppointmentStatus, TransactionType } from '@prisma/client';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class ReportsService {
-  constructor(
-    @InjectModel(Invoice.name) private invoiceModel: Model<any>,
-    @InjectModel(Appointment.name) private appointmentModel: Model<any>,
-    @InjectModel(Patient.name) private patientModel: Model<any>,
-    @InjectModel(StockTransaction.name) private stockTxModel: Model<any>,
-    @InjectModel(InventoryItem.name) private inventoryItemModel: Model<any>,
-    @InjectModel(LabCase.name) private labCaseModel: Model<any>,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   private getDateRange(from?: string, to?: string) {
     const start = from
-      ? new Date(from)
-      : new Date(new Date().setDate(new Date().getDate() - 30));
-    const end = to ? new Date(to + 'T23:59:59') : new Date();
+      ? dayjs(from).startOf('day').toDate()
+      : dayjs().subtract(30, 'day').startOf('day').toDate();
+    const end = to ? dayjs(to).endOf('day').toDate() : new Date();
     return { start, end };
   }
 
   // ── Revenue: Daily ──────────────────────────────────────────────────────────
   async getRevenueDaily(tenantId: string, from?: string, to?: string) {
     const { start, end } = this.getDateRange(from, to);
-    return this.invoiceModel.aggregate([
-      {
-        $match: {
-          tenantId: new Types.ObjectId(tenantId),
-          createdAt: { $gte: start, $lte: end },
-          status: { $ne: 'CANCELLED' },
-        },
+
+    const invoices = await this.prisma.invoice.findMany({
+      where: {
+        tenantId,
+        createdAt: { gte: start, lte: end },
+        status: { not: InvoiceStatus.CANCELLED },
       },
-      {
-        $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-          totalRevenue: { $sum: '$grandTotal' },
-          collected: { $sum: '$paidAmount' },
-          pending: { $sum: '$pendingAmount' },
-          totalInvoices: { $sum: 1 },
-        },
+      select: {
+        createdAt: true,
+        grandTotal: true,
+        paidAmount: true,
+        pendingAmount: true,
       },
-      { $sort: { _id: 1 } },
-      {
-        $project: {
-          date: '$_id',
-          totalRevenue: 1,
-          collected: 1,
-          pending: 1,
-          totalInvoices: 1,
-          _id: 0,
-        },
-      },
-    ]);
+    });
+
+    const grouped: Record<string, { date: string; totalRevenue: number; collected: number; pending: number; totalInvoices: number }> = {};
+    for (const inv of invoices) {
+      const day = dayjs(inv.createdAt).format('YYYY-MM-DD');
+      if (!grouped[day]) {
+        grouped[day] = { date: day, totalRevenue: 0, collected: 0, pending: 0, totalInvoices: 0 };
+      }
+      grouped[day].totalRevenue += inv.grandTotal;
+      grouped[day].collected += inv.paidAmount;
+      grouped[day].pending += inv.pendingAmount;
+      grouped[day].totalInvoices += 1;
+    }
+
+    return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
   }
 
   // ── Revenue: Monthly ────────────────────────────────────────────────────────
   async getRevenueMonthly(tenantId: string, from?: string, to?: string) {
     const { start, end } = this.getDateRange(from, to);
-    return this.invoiceModel.aggregate([
-      {
-        $match: {
-          tenantId: new Types.ObjectId(tenantId),
-          createdAt: { $gte: start, $lte: end },
-          status: { $ne: 'CANCELLED' },
-        },
+
+    const invoices = await this.prisma.invoice.findMany({
+      where: {
+        tenantId,
+        createdAt: { gte: start, lte: end },
+        status: { not: InvoiceStatus.CANCELLED },
       },
-      {
-        $group: {
-          _id: {
-            month: { $month: '$createdAt' },
-            year: { $year: '$createdAt' },
-          },
-          totalRevenue: { $sum: '$grandTotal' },
-          collected: { $sum: '$paidAmount' },
-          pending: { $sum: '$pendingAmount' },
-        },
+      select: {
+        createdAt: true,
+        grandTotal: true,
+        paidAmount: true,
+        pendingAmount: true,
       },
-      { $sort: { '_id.year': 1, '_id.month': 1 } },
-      {
-        $project: {
-          month: '$_id.month',
-          year: '$_id.year',
-          totalRevenue: 1,
-          collected: 1,
-          pending: 1,
-          _id: 0,
-        },
-      },
-    ]);
+    });
+
+    const grouped: Record<string, { month: number; year: number; totalRevenue: number; collected: number; pending: number }> = {};
+    for (const inv of invoices) {
+      const key = `${dayjs(inv.createdAt).year()}-${dayjs(inv.createdAt).month()}`;
+      if (!grouped[key]) {
+        grouped[key] = {
+          month: dayjs(inv.createdAt).month() + 1,
+          year: dayjs(inv.createdAt).year(),
+          totalRevenue: 0,
+          collected: 0,
+          pending: 0,
+        };
+      }
+      grouped[key].totalRevenue += inv.grandTotal;
+      grouped[key].collected += inv.paidAmount;
+      grouped[key].pending += inv.pendingAmount;
+    }
+
+    return Object.values(grouped).sort((a, b) => a.year - b.year || a.month - b.month);
   }
 
   // ── Revenue: By Doctor ──────────────────────────────────────────────────────
   async getRevenueByDoctor(tenantId: string, from?: string, to?: string) {
     const { start, end } = this.getDateRange(from, to);
-    return this.invoiceModel.aggregate([
-      {
-        $match: {
-          tenantId: new Types.ObjectId(tenantId),
-          createdAt: { $gte: start, $lte: end },
-          status: 'PAID',
-        },
+
+    const invoices = await this.prisma.invoice.findMany({
+      where: {
+        tenantId,
+        createdAt: { gte: start, lte: end },
+        status: InvoiceStatus.PAID,
       },
-      {
-        $group: {
-          _id: '$doctorId',
-          totalRevenue: { $sum: '$grandTotal' },
-          totalPatients: { $addToSet: '$patientId' },
-          totalInvoices: { $sum: 1 },
-        },
+      select: {
+        doctorId: true,
+        grandTotal: true,
+        patientId: true,
+        id: true,
       },
-      {
-        $lookup: {
-          from: 'users',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'doctor',
-        },
-      },
-      { $unwind: { path: '$doctor', preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          doctorId: '$_id',
-          doctorName: '$doctor.name',
-          totalRevenue: 1,
-          totalPatients: { $size: '$totalPatients' },
-          totalInvoices: 1,
-          _id: 0,
-        },
-      },
-    ]);
+    });
+
+    const grouped: Record<string, { doctorId: string; doctorName: string; totalRevenue: number; patientIds: Set<string>; totalInvoices: number }> = {};
+    for (const inv of invoices) {
+      if (!grouped[inv.doctorId]) {
+        grouped[inv.doctorId] = { doctorId: inv.doctorId, doctorName: '', totalRevenue: 0, patientIds: new Set(), totalInvoices: 0 };
+      }
+      grouped[inv.doctorId].totalRevenue += inv.grandTotal;
+      grouped[inv.doctorId].patientIds.add(inv.patientId);
+      grouped[inv.doctorId].totalInvoices += 1;
+    }
+
+    // Fetch doctor names
+    const doctorIds = Object.keys(grouped);
+    if (doctorIds.length > 0) {
+      const doctors = await this.prisma.user.findMany({
+        where: { id: { in: doctorIds } },
+        select: { id: true, name: true },
+      });
+      for (const doc of doctors) {
+        if (grouped[doc.id]) {
+          grouped[doc.id].doctorName = doc.name;
+        }
+      }
+    }
+
+    return Object.values(grouped).map(({ patientIds, ...rest }) => ({
+      ...rest,
+      totalPatients: patientIds.size,
+    }));
   }
 
   // ── Appointments: Summary ───────────────────────────────────────────────────
   async getAppointmentsSummary(tenantId: string, from?: string, to?: string) {
     const { start, end } = this.getDateRange(from, to);
-    const data = await this.appointmentModel.aggregate([
-      {
-        $match: {
-          tenantId: new Types.ObjectId(tenantId),
-          date: { $gte: start, $lte: end },
-        },
-      },
-      { $group: { _id: '$status', count: { $sum: 1 } } },
-    ]);
 
-    const summary: Record<string, number> = { total: 0 };
-    for (const row of data) {
-      summary[row._id.toLowerCase()] = row.count;
-      summary.total += row.count;
+    const appointments = await this.prisma.appointment.findMany({
+      where: {
+        tenantId,
+        date: { gte: start, lte: end },
+      },
+      select: { status: true },
+    });
+
+    const summary: Record<string, number> = { total: appointments.length };
+    for (const appt of appointments) {
+      const key = appt.status.toLowerCase();
+      summary[key] = (summary[key] || 0) + 1;
     }
     return summary;
   }
@@ -162,319 +157,291 @@ export class ReportsService {
   // ── Appointments: No-Show ───────────────────────────────────────────────────
   async getNoShowAppointments(tenantId: string, from?: string, to?: string) {
     const { start, end } = this.getDateRange(from, to);
-    return this.appointmentModel
-      .find({
-        tenantId: new Types.ObjectId(tenantId),
-        date: { $gte: start, $lte: end },
-        status: 'NO_SHOW',
-      })
-      .populate('patientId', 'name phone patientId')
-      .populate('doctorId', 'name email')
-      .sort({ date: -1 });
+
+    return this.prisma.appointment.findMany({
+      where: {
+        tenantId,
+        date: { gte: start, lte: end },
+        status: AppointmentStatus.NO_SHOW,
+      },
+      include: {
+        patient: { select: { name: true, phone: true, patientId: true } },
+        doctor: { select: { name: true, email: true } },
+      },
+      orderBy: { date: 'desc' },
+    });
   }
 
   // ── Patients: Growth ───────────────────────────────────────────────────────
   async getPatientGrowth(tenantId: string, from?: string, to?: string) {
     const { start, end } = this.getDateRange(from, to);
-    return this.patientModel.aggregate([
-      {
-        $match: {
-          tenantId: new Types.ObjectId(tenantId),
-          createdAt: { $gte: start, $lte: end },
-        },
+
+    const patients = await this.prisma.patient.findMany({
+      where: {
+        tenantId,
+        createdAt: { gte: start, lte: end },
       },
-      {
-        $group: {
-          _id: {
-            month: { $month: '$createdAt' },
-            year: { $year: '$createdAt' },
-          },
-          newPatients: { $sum: 1 },
-        },
-      },
-      { $sort: { '_id.year': 1, '_id.month': 1 } },
-      {
-        $project: {
-          month: '$_id.month',
-          year: '$_id.year',
-          newPatients: 1,
-          _id: 0,
-        },
-      },
-    ]);
+      select: { createdAt: true },
+    });
+
+    const grouped: Record<string, { month: number; year: number; newPatients: number }> = {};
+    for (const p of patients) {
+      const key = `${dayjs(p.createdAt).year()}-${dayjs(p.createdAt).month()}`;
+      if (!grouped[key]) {
+        grouped[key] = {
+          month: dayjs(p.createdAt).month() + 1,
+          year: dayjs(p.createdAt).year(),
+          newPatients: 0,
+        };
+      }
+      grouped[key].newPatients += 1;
+    }
+
+    return Object.values(grouped).sort((a, b) => a.year - b.year || a.month - b.month);
   }
 
   // ── Patients: Pending Payments ─────────────────────────────────────────────
   async getPendingPayments(tenantId: string) {
-    return this.invoiceModel.aggregate([
-      {
-        $match: {
-          tenantId: new Types.ObjectId(tenantId),
-          pendingAmount: { $gt: 0 },
-          status: { $ne: 'CANCELLED' },
-        },
+    const invoices = await this.prisma.invoice.findMany({
+      where: {
+        tenantId,
+        pendingAmount: { gt: 0 },
+        status: { not: InvoiceStatus.CANCELLED },
       },
-      {
-        $group: {
-          _id: '$patientId',
-          totalPending: { $sum: '$pendingAmount' },
-          invoiceCount: { $sum: 1 },
-        },
+      select: {
+        patientId: true,
+        pendingAmount: true,
       },
-      {
-        $lookup: {
-          from: 'patients',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'patient',
-        },
-      },
-      { $unwind: '$patient' },
-      {
-        $project: {
-          patientId: '$patient.patientId',
-          name: '$patient.name',
-          phone: '$patient.phone',
-          totalPending: 1,
-          invoiceCount: 1,
-          _id: 0,
-        },
-      },
-      { $sort: { totalPending: -1 } },
-    ]);
+    });
+
+    const grouped: Record<string, { patientId: string; name: string; phone: string; totalPending: number; invoiceCount: number }> = {};
+    for (const inv of invoices) {
+      if (!grouped[inv.patientId]) {
+        grouped[inv.patientId] = { patientId: inv.patientId, name: '', phone: '', totalPending: 0, invoiceCount: 0 };
+      }
+      grouped[inv.patientId].totalPending += inv.pendingAmount;
+      grouped[inv.patientId].invoiceCount += 1;
+    }
+
+    // Fetch patient details
+    const patientIds = Object.keys(grouped);
+    if (patientIds.length > 0) {
+      const patients = await this.prisma.patient.findMany({
+        where: { id: { in: patientIds } },
+        select: { id: true, name: true, phone: true, patientId: true },
+      });
+      for (const pat of patients) {
+        if (grouped[pat.id]) {
+          grouped[pat.id].name = pat.name;
+          grouped[pat.id].phone = pat.phone;
+          grouped[pat.id].patientId = pat.patientId;
+        }
+      }
+    }
+
+    return Object.values(grouped).sort((a, b) => b.totalPending - a.totalPending);
   }
 
   // ── Inventory: Expenses ────────────────────────────────────────────────────
   async getInventoryExpenses(tenantId: string, from?: string, to?: string) {
     const { start, end } = this.getDateRange(from, to);
-    return this.stockTxModel.aggregate([
-      {
-        $match: {
-          tenantId: new Types.ObjectId(tenantId),
-          type: 'PURCHASE',
-          createdAt: { $gte: start, $lte: end },
-        },
+
+    const transactions = await this.prisma.stockTransaction.findMany({
+      where: {
+        tenantId,
+        type: TransactionType.PURCHASE,
+        createdAt: { gte: start, lte: end },
       },
-      {
-        $lookup: {
-          from: 'inventoryitems',
-          localField: 'itemId',
-          foreignField: '_id',
-          as: 'item',
-        },
+      include: {
+        item: { select: { category: true } },
       },
-      { $unwind: '$item' },
-      {
-        $group: {
-          _id: '$item.category',
-          totalSpent: { $sum: '$totalCost' },
-          itemCount: { $addToSet: '$itemId' },
-        },
-      },
-      {
-        $project: {
-          category: '$_id',
-          totalSpent: 1,
-          itemCount: { $size: '$itemCount' },
-          _id: 0,
-        },
-      },
-      { $sort: { totalSpent: -1 } },
-    ]);
+    });
+
+    const grouped: Record<string, { category: string; totalSpent: number; itemCount: number }> = {};
+    for (const tx of transactions) {
+      const cat = tx.item.category || 'Uncategorized';
+      if (!grouped[cat]) grouped[cat] = { category: cat, totalSpent: 0, itemCount: 0 };
+      grouped[cat].totalSpent += tx.totalCost;
+    }
+
+    return Object.values(grouped).sort((a, b) => b.totalSpent - a.totalSpent);
   }
 
   // ── Chairs: Utilization ────────────────────────────────────────────────────
+  // Note: chairId field was not in the Prisma schema but was referenced in MongoDB
+  // This will use appointment duration if available, otherwise estimate
   async getChairUtilization(tenantId: string, from?: string, to?: string) {
     const { start, end } = this.getDateRange(from, to);
-    return this.appointmentModel.aggregate([
-      {
-        $match: {
-          tenantId: new Types.ObjectId(tenantId),
-          date: { $gte: start, $lte: end },
-          chairId: { $exists: true, $ne: null },
-          status: 'COMPLETED',
-        },
+
+    const appointments = await this.prisma.appointment.findMany({
+      where: {
+        tenantId,
+        date: { gte: start, lte: end },
+        status: AppointmentStatus.COMPLETED,
       },
-      {
-        $group: {
-          _id: '$chairId',
-          totalAppointments: { $sum: 1 },
-          totalMinutes: { $sum: '$duration' },
-        },
-      },
-      {
-        $project: {
-          chairId: '$_id',
-          totalAppointments: 1,
-          totalHours: { $round: [{ $divide: ['$totalMinutes', 60] }, 2] },
-          // Available hours = working days in range * 11 hours/day
-          utilizationPercent: {
-            $round: [
-              {
-                $multiply: [
-                  { $divide: ['$totalMinutes', { $multiply: [30, 11, 60] }] },
-                  100,
-                ],
-              },
-              1,
-            ],
-          },
-          _id: 0,
-        },
-      },
-    ]);
+      select: { id: true, startTime: true, endTime: true, doctorId: true },
+    });
+
+    // Since we don't have chair tracking in the schema, use doctor as a proxy
+    const grouped: Record<string, { chairId: string; totalAppointments: number; totalMinutes: number }> = {};
+    for (const appt of appointments) {
+      const chairId = appt.doctorId; // Using doctor as proxy for chair
+      if (!grouped[chairId]) grouped[chairId] = { chairId, totalAppointments: 0, totalMinutes: 0 };
+      grouped[chairId].totalAppointments += 1;
+      // Estimate duration from start/end times
+      if (appt.startTime && appt.endTime) {
+        const [startH, startM] = appt.startTime.split(':').map(Number);
+        const [endH, endM] = appt.endTime.split(':').map(Number);
+        const mins = (endH * 60 + endM) - (startH * 60 + startM);
+        grouped[chairId].totalMinutes += mins > 0 ? mins : 30;
+      } else {
+        grouped[chairId].totalMinutes += 30; // Default 30 min
+      }
+    }
+
+    const daysInRange = Math.max(1, dayjs(end).diff(dayjs(start), 'day'));
+    const availableMinutes = daysInRange * 11 * 60; // 11 hours/day
+
+    return Object.values(grouped).map((g) => ({
+      chairId: g.chairId,
+      totalAppointments: g.totalAppointments,
+      totalHours: Math.round((g.totalMinutes / 60) * 100) / 100,
+      utilizationPercent: Math.round(((g.totalMinutes / availableMinutes) * 100) * 10) / 10,
+    }));
   }
 
   // ── Dashboard ──────────────────────────────────────────────────────────────
   async getDashboard(tenantId: string) {
-    const tid = new Types.ObjectId(tenantId);
     const now = new Date();
-    const todayStart = new Date(now);
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date(now);
-    todayEnd.setHours(23, 59, 59, 999);
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const todayStart = dayjs(now).startOf('day').toDate();
+    const todayEnd   = dayjs(now).endOf('day').toDate();
+    const monthStart = dayjs(now).startOf('month').toDate();
+    const sevenDaysAgo = dayjs(now).subtract(6, 'day').startOf('day').toDate();
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-    // 7-day window for revenue chart
-    const sevenDaysAgo = new Date(now);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
-
+    // All 12 queries run in parallel over a single pooled connection batch
     const [
-      [todayRevRow],
+      todayRevenueAgg,
       todayAppts,
       todayNewPatients,
-      [monthRevRow],
+      monthRevenueAgg,
       monthAppts,
       monthNewPatients,
       totalPatients,
-      [pendingRow],
-      lowStockCount,
+      pendingAgg,
+      lowStockItems,
       pendingLabCases,
-      revenueChartRaw,
-      appointmentsByStatusRaw,
+      revenueChartInvoices,
+      appointmentsByStatus,
     ] = await Promise.all([
-      this.invoiceModel.aggregate([
-        {
-          $match: {
-            tenantId: tid,
-            createdAt: { $gte: todayStart, $lte: todayEnd },
-            status: { $ne: 'CANCELLED' },
-          },
+      // Today revenue — aggregate avoids fetching all rows to JS
+      this.prisma.invoice.aggregate({
+        where: {
+          tenantId,
+          createdAt: { gte: todayStart, lte: todayEnd },
+          status: { not: InvoiceStatus.CANCELLED },
         },
-        { $group: { _id: null, total: { $sum: '$paidAmount' } } },
-      ]),
-      this.appointmentModel.countDocuments({
-        tenantId: tid,
-        date: { $gte: todayStart, $lte: todayEnd },
+        _sum: { paidAmount: true },
       }),
-      this.patientModel.countDocuments({
-        tenantId: tid,
-        createdAt: { $gte: todayStart, $lte: todayEnd },
+      this.prisma.appointment.count({
+        where: { tenantId, date: { gte: todayStart, lte: todayEnd } },
       }),
-      this.invoiceModel.aggregate([
-        {
-          $match: {
-            tenantId: tid,
-            createdAt: { $gte: monthStart },
-            status: { $ne: 'CANCELLED' },
-          },
+      this.prisma.patient.count({
+        where: { tenantId, createdAt: { gte: todayStart, lte: todayEnd } },
+      }),
+      // Month revenue — aggregate
+      this.prisma.invoice.aggregate({
+        where: {
+          tenantId,
+          createdAt: { gte: monthStart },
+          status: { not: InvoiceStatus.CANCELLED },
         },
-        { $group: { _id: null, total: { $sum: '$paidAmount' } } },
-      ]),
-      this.appointmentModel.countDocuments({
-        tenantId: tid,
-        date: { $gte: monthStart },
+        _sum: { paidAmount: true },
       }),
-      this.patientModel.countDocuments({
-        tenantId: tid,
-        createdAt: { $gte: monthStart },
+      this.prisma.appointment.count({
+        where: { tenantId, date: { gte: monthStart } },
       }),
-      this.patientModel.countDocuments({ tenantId: tid }),
-      this.invoiceModel.aggregate([
-        {
-          $match: {
-            tenantId: tid,
-            pendingAmount: { $gt: 0 },
-            status: { $ne: 'CANCELLED' },
-          },
-        },
-        { $group: { _id: null, total: { $sum: '$pendingAmount' } } },
-      ]),
-      this.inventoryItemModel.countDocuments({
-        tenantId: tid,
-        isActive: true,
-        $expr: { $lte: ['$currentStock', '$minimumStock'] },
+      this.prisma.patient.count({
+        where: { tenantId, createdAt: { gte: monthStart } },
       }),
-      this.labCaseModel.countDocuments({
-        tenantId: tid,
-        status: { $in: ['SENT', 'IN_PROGRESS'] },
+      this.prisma.patient.count({ where: { tenantId } }),
+      // Pending payments — aggregate instead of fetching all rows
+      this.prisma.invoice.aggregate({
+        where: {
+          tenantId,
+          pendingAmount: { gt: 0 },
+          status: { not: InvoiceStatus.CANCELLED },
+        },
+        _sum: { pendingAmount: true },
       }),
-      // 7-day daily revenue chart
-      this.invoiceModel.aggregate([
-        {
-          $match: {
-            tenantId: tid,
-            createdAt: { $gte: sevenDaysAgo, $lte: todayEnd },
-            status: { $ne: 'CANCELLED' },
-          },
+      // ✅ Fixed: use raw SQL for column comparison (currentStock < minimumStock)
+      this.prisma.$queryRaw<[{ count: bigint }]>`
+        SELECT COUNT(*) as count
+        FROM "InventoryItem"
+        WHERE "tenantId" = ${tenantId}
+          AND "isActive" = true
+          AND "currentStock" < "minimumStock"
+      `,
+      this.prisma.labCase.count({
+        where: {
+          tenantId,
+          status: { in: ['SENT', 'IN_PROGRESS'] },
         },
-        {
-          $group: {
-            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-            revenue: { $sum: '$paidAmount' },
-          },
+      }),
+      // 7-day revenue chart — only fetch what we need
+      this.prisma.invoice.findMany({
+        where: {
+          tenantId,
+          createdAt: { gte: sevenDaysAgo, lte: todayEnd },
+          status: { not: InvoiceStatus.CANCELLED },
         },
-        { $sort: { _id: 1 } },
-      ]),
-      // Appointments by status (all time for current month)
-      this.appointmentModel.aggregate([
-        {
-          $match: {
-            tenantId: tid,
-            date: { $gte: monthStart },
-          },
-        },
-        { $group: { _id: '$status', count: { $sum: 1 } } },
-      ]),
+        select: { createdAt: true, paidAmount: true },
+      }),
+      this.prisma.appointment.groupBy({
+        by: ['status'],
+        where: { tenantId, date: { gte: monthStart } },
+        _count: { status: true },
+      }),
     ]);
 
-    // Build 7-day chart with day labels (Mon, Tue, etc.)
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const todayRevenue = todayRevenueAgg._sum.paidAmount ?? 0;
+    const monthRevenue = monthRevenueAgg._sum.paidAmount ?? 0;
+    const pendingTotal = pendingAgg._sum.pendingAmount ?? 0;
+    const lowStockCount = Number((lowStockItems as [{ count: bigint }])[0]?.count ?? 0);
+
+    // Build 7-day chart
     const revenueByDate: Record<string, number> = {};
-    for (const row of revenueChartRaw) {
-      revenueByDate[row._id] = row.revenue;
-    }
-    const revenueChart: { name: string; revenue: number }[] = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      revenueChart.push({
-        name: dayNames[d.getDay()],
-        revenue: revenueByDate[dateStr] ?? 0,
-      });
+    for (const inv of revenueChartInvoices) {
+      const day = dayjs(inv.createdAt).format('YYYY-MM-DD');
+      revenueByDate[day] = (revenueByDate[day] || 0) + inv.paidAmount;
     }
 
-    // Build appointments by status array
-    const appointmentsByStatus = appointmentsByStatusRaw.map((row: { _id: string; count: number }) => ({
-      status: row._id.replace(/_/g, ' '),
-      count: row.count,
+    const revenueChart = Array.from({ length: 7 }, (_, i) => {
+      const d = dayjs(now).subtract(6 - i, 'day');
+      return {
+        name: dayNames[d.day()],
+        revenue: revenueByDate[d.format('YYYY-MM-DD')] ?? 0,
+      };
+    });
+
+    const apptStatusMap = appointmentsByStatus.map((s) => ({
+      status: s.status,
+      count: s._count.status,
     }));
 
     return {
-      todayRevenue: todayRevRow?.total ?? 0,
+      todayRevenue,
       todayAppointments: todayAppts,
       todayNewPatients,
-      monthRevenue: monthRevRow?.total ?? 0,
+      monthRevenue,
       monthAppointments: monthAppts,
       monthNewPatients,
       totalPatients,
-      pendingPaymentsTotal: pendingRow?.total ?? 0,
+      pendingPaymentsTotal: pendingTotal,
       lowStockCount,
       pendingLabCases,
       revenueChart,
-      appointmentsByStatus,
+      appointmentsByStatus: apptStatusMap,
     };
   }
 }

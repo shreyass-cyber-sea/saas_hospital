@@ -32,9 +32,12 @@ export class AiService {
       const tenant = await this.tenantService.getTenantById(tenantId);
       if (!tenant) throw new Error('Tenant not found');
 
-      const clinicName = tenant.name;
-      const clinicPhone = 'our main number';
-      const clinicAddress = 'our clinic location';
+      const clinicName = tenant.name || 'our clinic';
+      const clinicPhone = tenant.phone || 'our main number';
+      let clinicAddress = 'our clinic location';
+      if (tenant.address && typeof tenant.address === 'object' && 'street' in tenant.address) {
+        clinicAddress = (tenant.address as any).street;
+      }
 
       // Format working hours (simplified for prompt)
       const settings = tenant.settings as any;

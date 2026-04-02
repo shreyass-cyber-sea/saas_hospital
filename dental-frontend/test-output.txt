@@ -1,0 +1,66 @@
+
+Running 2 tests using 2 workers
+
+[1A[2K[1/2] [chromium] ΓÇ║ e2e\dashboard.spec.ts:13:3 ΓÇ║ Dashboard Navigation ΓÇ║ dashboard renders correctly and takes a screenshot
+[1A[2K[2/2] [chromium] ΓÇ║ e2e\auth.spec.ts:4:3 ΓÇ║ Authentication Flow ΓÇ║ successful login
+[1A[2K  1) [chromium] ΓÇ║ e2e\auth.spec.ts:4:3 ΓÇ║ Authentication Flow ΓÇ║ successful login ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('form')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('form')[22m
+
+
+       7 |
+       8 |     // Wait for the form to appear
+    >  9 |     await expect(page.locator('form')).toBeVisible();
+         |                                        ^
+      10 |
+      11 |     // Fill in the provided test credentials
+      12 |     await page.fill('input[type="email"]', 'karthik5kashyapks@gmail.com');
+        at E:\SaaS-Updated-main\dental-frontend\e2e\auth.spec.ts:9:40
+
+    Error Context: test-results\auth-Authentication-Flow-successful-login-chromium\error-context.md
+
+
+[1A[2K  2) [chromium] ΓÇ║ e2e\dashboard.spec.ts:13:3 ΓÇ║ Dashboard Navigation ΓÇ║ dashboard renders correctly and takes a screenshot 
+
+    [31mTest timeout of 30000ms exceeded while running "beforeEach" hook.[39m
+
+      3 | test.describe('Dashboard Navigation', () => {
+      4 |   // Setup: Log in before each test runs
+    > 5 |   test.beforeEach(async ({ page }) => {
+        |        ^
+      6 |     await page.goto('/login');
+      7 |     await page.fill('input[type="email"]', 'karthik5kashyapks@gmail.com');
+      8 |     await page.fill('input[type="password"]', '12345678');
+        at E:\SaaS-Updated-main\dental-frontend\e2e\dashboard.spec.ts:5:8
+
+    Error: page.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[type="email"]')[22m
+
+
+       5 |   test.beforeEach(async ({ page }) => {
+       6 |     await page.goto('/login');
+    >  7 |     await page.fill('input[type="email"]', 'karthik5kashyapks@gmail.com');
+         |                ^
+       8 |     await page.fill('input[type="password"]', '12345678');
+       9 |     await page.click('button[type="submit"]');
+      10 |     await page.waitForURL('**/dashboard', { timeout: 15000 });
+        at E:\SaaS-Updated-main\dental-frontend\e2e\dashboard.spec.ts:7:16
+
+    Error Context: test-results\dashboard-Dashboard-Naviga-d7b46-ctly-and-takes-a-screenshot-chromium\error-context.md
+
+
+[1A[2K  2 failed
+    [chromium] ΓÇ║ e2e\auth.spec.ts:4:3 ΓÇ║ Authentication Flow ΓÇ║ successful login ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    [chromium] ΓÇ║ e2e\dashboard.spec.ts:13:3 ΓÇ║ Dashboard Navigation ΓÇ║ dashboard renders correctly and takes a screenshot 
+
+[36m  Serving HTML report at http://localhost:9323. Press Ctrl+C to quit.[39m

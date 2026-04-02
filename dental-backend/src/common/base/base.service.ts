@@ -1,9 +1,10 @@
-import { Model, UpdateQuery, Document } from 'mongoose';
 import { NotFoundException } from '@nestjs/common';
-type FilterQuery<T> = any; // Fallback since Mongoose FilterQuery is causing TS type-resolution issues in this environment
+type ModelLike<T> = any;
+type FilterQuery<T> = any;
+type UpdateQuery<T> = any;
 
-export abstract class BaseService<T extends Document> {
-  protected constructor(protected readonly model: Model<T>) {}
+export abstract class BaseService<T> {
+  protected constructor(protected readonly model: ModelLike<T>) {}
 
   async create(tenantId: string, createDto: any): Promise<T> {
     const createdEntity = new this.model({

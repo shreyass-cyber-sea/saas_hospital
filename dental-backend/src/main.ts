@@ -37,6 +37,42 @@ async function bootstrap() {
   app.use(helmet());
   app.use(compression());
 
+  // Lightweight API timing telemetry for key read endpoints.
+  const trackedPathPrefixes = [
+    '/api/v1/reports/dashboard',
+    '/api/v1/appointments',
+    '/api/v1/patients',
+    '/api/v1/invoices',
+  ];
+  const timings = new Map<string, number[]>();
+  const calcP95 = (values: number[]) => {
+    if (!values.length) return 0;
+    const sorted = [...values].sort((a, b) => a - b);
+    const index = Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1);
+    return sorted[index];
+  };
+  app.use((req, res, next) => {
+    const route = trackedPathPrefixes.find((prefix) => req.path.startsWith(prefix));
+    if (!route) {
+      return next();
+    }
+    const start = Date.now();
+    res.on('finish', () => {
+      const durationMs = Date.now() - start;
+      const history = timings.get(route) ?? [];
+      history.push(durationMs);
+      if (history.length > 200) {
+        history.shift();
+      }
+      timings.set(route, history);
+      if (history.length % 20 === 0) {
+        const p95 = calcP95(history);
+        console.log(`[perf] ${route} p95=${p95}ms samples=${history.length}`);
+      }
+    });
+    next();
+  });
+
   // Input Validation
   app.useGlobalPipes(
     new ValidationPipe({

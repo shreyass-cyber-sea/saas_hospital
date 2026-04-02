@@ -177,17 +177,21 @@ export class AppointmentsService {
     }
 
     const tokenNumber = await this.getNextToken(tenantId, dto.doctorId, date);
+    const appointmentData = {
+      tenantId,
+      patientId: dto.patientId,
+      doctorId: dto.doctorId,
+      date,
+      startTime: dto.startTime,
+      endTime: dto.endTime,
+      type: dto.type,
+      chiefComplaint: dto.chiefComplaint || undefined,
+      tokenNumber,
+      createdByUserId: userId,
+    };
 
     const appointment = await this.prisma.appointment.create({
-      data: {
-        ...dto,
-        tenantId,
-        patientId: dto.patientId,
-        doctorId: dto.doctorId,
-        date,
-        tokenNumber,
-        createdByUserId: userId,
-      },
+      data: appointmentData,
     });
 
     // Send confirmation email asynchronously
@@ -335,9 +339,16 @@ export class AppointmentsService {
     dto: UpdateAppointmentDto,
   ): Promise<Appointment> {
     try {
+      const updateData: Record<string, any> = {};
+
+      if (dto.status !== undefined) updateData.status = dto.status;
+      if (dto.cancelledReason !== undefined) {
+        updateData.cancelledReason = dto.cancelledReason;
+      }
+
       return await this.prisma.appointment.update({
         where: { id },
-        data: dto as any,
+        data: updateData,
       });
     } catch (error) {
       throw new NotFoundException('Appointment not found');

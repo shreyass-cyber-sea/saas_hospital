@@ -36,7 +36,7 @@ export class PatientsController {
   @Post()
   @ApiOperation({ summary: 'Register a new patient' })
   create(@Request() req: any, @Body() dto: CreatePatientDto) {
-    return this.patientsService.create(req.tenantId, req.user.sub, dto);
+    return this.patientsService.create(req.tenantId, req.user.id, dto);
   }
 
   @Get()
@@ -105,7 +105,7 @@ export class PatientsController {
     @Param('id') id: string,
     @Body() dto: AddClinicalNoteDto,
   ) {
-    return this.patientsService.addNote(req.tenantId, id, req.user.sub, dto);
+    return this.patientsService.addNote(req.tenantId, id, req.user.id, dto);
   }
 
   @Get(':id/notes')
@@ -142,7 +142,7 @@ export class PatientsController {
     return this.patientsService.addDocument(
       req.tenantId,
       id,
-      req.user.sub,
+      req.user.id,
       dto,
     );
   }

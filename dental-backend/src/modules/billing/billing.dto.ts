@@ -1,52 +1,160 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsString,
-  IsNumber,
-  IsOptional,
-  IsArray,
-  IsEnum,
-  Min,
-  IsBoolean,
-} from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsEnum, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PaymentMode } from './invoice.schema';
+import { PaymentMode } from '@prisma/client';
 
-export class LineItemDto {
-  @ApiPropertyOptional() @IsOptional() @IsString() procedureId?: string;
-  @ApiProperty() @IsString() description: string;
-  @ApiProperty({ default: 1 }) @IsNumber() @Min(1) quantity: number = 1;
-  @ApiProperty() @IsNumber() @Min(0) unitPrice: number;
+export class CreateProcedureDto {
+  @ApiProperty()
+  @IsString()
+  name: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  code?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  category?: string;
+
   @ApiPropertyOptional({ default: 0 })
   @IsOptional()
   @IsNumber()
-  discount?: number;
-  @ApiPropertyOptional({ default: 0 })
+  @Min(0)
+  defaultPrice?: number;
+
+  @ApiPropertyOptional({ default: 30 })
   @IsOptional()
   @IsNumber()
-  discountPercent?: number;
-  @ApiPropertyOptional({ default: 18 })
+  @Min(0)
+  defaultDuration?: number;
+
+  @ApiPropertyOptional({ default: true })
+  @IsOptional()
+  taxable?: boolean;
+}
+
+export class UpdateProcedureDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  code?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @ApiPropertyOptional()
   @IsOptional()
   @IsNumber()
-  taxPercent?: number;
+  @Min(0)
+  defaultPrice?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  defaultDuration?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  taxable?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  isActive?: boolean;
 }
 
 export class CreateInvoiceDto {
-  @ApiProperty() @IsString() patientId: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() appointmentId?: string;
-  @ApiProperty() @IsString() doctorId: string;
-  @ApiProperty({ type: [LineItemDto] })
-  @IsArray()
-  @Type(() => LineItemDto)
-  lineItems: LineItemDto[];
-  @ApiPropertyOptional() @IsOptional() @IsString() notes?: string;
-  @ApiPropertyOptional({ default: 0 })
+  @ApiProperty()
+  @IsString()
+  patientId: string;
+
+  @ApiProperty()
+  @IsString()
+  doctorId: string;
+
+  @ApiPropertyOptional()
   @IsOptional()
-  @IsNumber()
-  advanceUsed?: number;
+  @IsString()
+  appointmentId?: string;
+
+  @ApiProperty({ type: [Object] })
+  lineItems: {
+    procedureId?: string;
+    description: string;
+    quantity?: number;
+    unitPrice?: number;
+    discount?: number;
+    discountPercent?: number;
+    taxPercent?: number;
+  }[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class UpdateInvoiceDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  status?: string;
 }
 
 export class RecordPaymentDto {
-  @ApiProperty() @IsNumber() @Min(0) amount: number;
-  @ApiProperty({ enum: PaymentMode }) @IsEnum(PaymentMode) mode: PaymentMode;
-  @ApiPropertyOptional() @IsOptional() @IsString() reference?: string;
+  @ApiProperty()
+  @IsNumber()
+  @Min(0)
+  amount: number;
+
+  @ApiPropertyOptional({ enum: PaymentMode, default: PaymentMode.CASH })
+  @IsOptional()
+  @IsEnum(PaymentMode)
+  mode?: PaymentMode;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  reference?: string;
+}
+
+export class CancelInvoiceDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}
+
+export class CreateAdvanceDto {
+  @ApiProperty()
+  @IsString()
+  patientId: string;
+
+  @ApiProperty()
+  @IsNumber()
+  @Min(0)
+  amount: number;
+
+  @ApiPropertyOptional({ enum: PaymentMode, default: PaymentMode.CASH })
+  @IsOptional()
+  @IsEnum(PaymentMode)
+  mode?: PaymentMode;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }

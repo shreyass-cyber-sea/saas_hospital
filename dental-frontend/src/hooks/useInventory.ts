@@ -1,19 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
 
-function is404(error: unknown) {
-    const err = error as { response?: { status?: number } };
-    return err?.response?.status === 404;
-}
-
 // ─── Items ──────────────────────────────────────────────────────────────────
-export function useInventoryItems(params: { category?: string; lowStock?: boolean; page?: number; limit?: number } = {}) {
+export function useInventoryItems(
+    params: { category?: string; lowStock?: boolean; page?: number; limit?: number } = {},
+) {
     return useQuery({
         queryKey: ['inventory', 'items', params],
         queryFn: async () => {
             const res = await api.get('/inventory/items', { params });
             const payload = res.data?.data || res.data;
-            return Array.isArray(payload) ? payload : [];
+            return Array.isArray(payload) ? payload : payload?.items ?? [];
         },
         staleTime: 60 * 1000,
         refetchInterval: false,
@@ -24,7 +21,11 @@ export function useInventoryItems(params: { category?: string; lowStock?: boolea
 export function useLowStockItems() {
     return useQuery({
         queryKey: ['inventory', 'low-stock'],
-        queryFn: async () => [],
+        queryFn: async () => {
+            const res = await api.get('/inventory/low-stock');
+            const payload = res.data?.data || res.data;
+            return Array.isArray(payload) ? payload : [];
+        },
         staleTime: 60 * 1000,
         refetchInterval: false,
         refetchOnWindowFocus: false,
@@ -39,6 +40,20 @@ export function useInventoryValuation() {
             const res = await api.get('/inventory/valuation');
             return res.data?.data || res.data || {};
         },
+        staleTime: 60 * 1000,
+        refetchInterval: false,
+        refetchOnWindowFocus: false,
+    });
+}
+
+export function useInventoryItem(id: string) {
+    return useQuery({
+        queryKey: ['inventory', 'items', id],
+        queryFn: async () => {
+            const res = await api.get(`/inventory/items/${id}`);
+            return res.data?.data || res.data;
+        },
+        enabled: !!id,
         staleTime: 60 * 1000,
         refetchInterval: false,
         refetchOnWindowFocus: false,
@@ -72,13 +87,15 @@ export function useUpdateInventoryItem(id: string) {
 }
 
 // ─── Transactions ────────────────────────────────────────────────────────────
-export function useInventoryTransactions(params: { itemId?: string; type?: string; from?: string; to?: string } = {}) {
+export function useInventoryTransactions(
+    params: { itemId?: string; type?: string; from?: string; to?: string; page?: number; limit?: number } = {},
+) {
     return useQuery({
         queryKey: ['inventory', 'transactions', params],
         queryFn: async () => {
             const res = await api.get('/inventory/transactions', { params });
             const payload = res.data?.data || res.data;
-            return Array.isArray(payload) ? payload : [];
+            return Array.isArray(payload) ? payload : payload?.items ?? [];
         },
         staleTime: 60 * 1000,
         refetchInterval: false,
@@ -89,7 +106,14 @@ export function useInventoryTransactions(params: { itemId?: string; type?: strin
 export function useCreateInventoryTransaction() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (dto: { itemId: string; type: string; quantity: number; unitCost?: number; referenceNote?: string; patientId?: string }) => {
+        mutationFn: async (dto: {
+            itemId: string;
+            type: string;
+            quantity: number;
+            unitCost?: number;
+            referenceNote?: string;
+            patientId?: string;
+        }) => {
             const res = await api.post('/inventory/transactions', dto);
             return res.data;
         },

@@ -1,187 +1,157 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
-import { 
-  Invoice, 
-  InvoiceStatus, 
-  PaymentMode, 
-  Procedure, 
-  AdvancePayment,
-  Role
-} from '@prisma/client';
-import { StorageService } from '../storage/storage.service';
-import { PdfService } from './pdf.service';
-import { EmailService } from '../notifications/email.service';
-import { PaginationDto } from '../../common/dto/pagination.dto';
-import { ConfigService } from '@nestjs/config';
+import { PaymentMode, InvoiceStatus, Prisma } from '@prisma/client';
 import {
+  CreateProcedureDto,
+  UpdateProcedureDto,
   CreateInvoiceDto,
+  UpdateInvoiceDto,
   RecordPaymentDto,
-  LineItemDto as LineItemInput,
+  CreateAdvanceDto,
 } from './billing.dto';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 
 @Injectable()
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
 
-  constructor(
-    private prisma: PrismaService,
-    private storageService: StorageService,
-    private pdfService: PdfService,
-    private emailService: EmailService,
-    private configService: ConfigService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  private getClinicInfo() {
-    return {
-      clinicName: this.configService.get<string>('CLINIC_NAME', 'Dental Clinic'),
-      clinicAddress: this.configService.get<string>('CLINIC_ADDRESS', ''),
-      clinicPhone: this.configService.get<string>('CLINIC_PHONE', ''),
-      clinicGstin: this.configService.get<string>('CLINIC_GSTIN'),
-    };
-  }
-
-  // ─── Invoice Number Generation ─────────────────────────────────────────────
-  private async generateInvoiceNumber(tenantId: string): Promise<string> {
-    const year = new Date().getFullYear();
-    const count = await this.prisma.invoice.count({
-      where: { tenantId },
+  // ─── Procedures ──────────────────────────────────────────────────────────────
+  async createProcedure(tenantId: string, dto: CreateProcedureDto) {
+    return this.prisma.procedure.create({
+      data: {
+        tenantId,
+        name: dto.name,
+        code: dto.code,
+        category: dto.category,
+        defaultPrice: dto.defaultPrice ?? 0,
+        defaultDuration: dto.defaultDuration ?? 30,
+        taxable: dto.taxable ?? true,
+        isActive: true,
+      },
     });
-    const seq = String(count + 1).padStart(4, '0');
-    return `INV-${year}-${seq}`;
   }
 
-  // ─── Amount Calculation ─────────────────────────────────────────────────────
-  private calculateLineItems(lineItems: LineItemInput[]) {
+  async getProcedures(tenantId: string, pagination: PaginationDto) {
+    const { page = 1, limit = 20 } = pagination;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.procedure.findMany({
+        where: { tenantId, isActive: true },
+        orderBy: { name: 'asc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.procedure.count({ where: { tenantId, isActive: true } }),
+    ]);
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async getProcedure(tenantId: string, id: string) {
+    const procedure = await this.prisma.procedure.findUnique({
+      where: { id },
+    });
+    if (!procedure || procedure.tenantId !== tenantId) {
+      throw new NotFoundException('Procedure not found');
+    }
+    return procedure;
+  }
+
+  async updateProcedure(tenantId: string, id: string, dto: UpdateProcedureDto) {
+    const procedure = await this.getProcedure(tenantId, id);
+    return this.prisma.procedure.update({
+      where: { id },
+      data: {
+        name: dto.name ?? procedure.name,
+        code: dto.code ?? procedure.code,
+        category: dto.category ?? procedure.category,
+        defaultPrice: dto.defaultPrice ?? procedure.defaultPrice,
+        defaultDuration: dto.defaultDuration ?? procedure.defaultDuration,
+        taxable: dto.taxable ?? procedure.taxable,
+        isActive: dto.isActive ?? procedure.isActive,
+      },
+    });
+  }
+
+  async deleteProcedure(tenantId: string, id: string) {
+    await this.getProcedure(tenantId, id);
+    return this.prisma.procedure.update({
+      where: { id },
+      data: { isActive: false },
+    });
+  }
+
+  // ─── Invoices ─────────────────────────────────────────────────────────────────
+  async createInvoice(tenantId: string, userId: string, dto: CreateInvoiceDto) {
+    // Generate invoice number
+    const year = new Date().getFullYear();
+    const month = String(new Date().getMonth() + 1).padStart(2, '0');
+    const count = await this.prisma.invoice.count({ where: { tenantId } });
+    const invoiceNumber = `INV-${year}${month}-${String(count + 1).padStart(4, '0')}`;
+
+    // Calculate totals from line items
     let subtotal = 0;
     let totalDiscount = 0;
     let totalTax = 0;
 
-    const calculated = lineItems.map((item) => {
-      const qty = item.quantity || 1;
-      const unitPrice = item.unitPrice;
-      const discountAmount =
-        item.discount ??
-        (item.discountPercent
-          ? (unitPrice * qty * item.discountPercent) / 100
-          : 0);
+    const lineItems = dto.lineItems.map((item) => {
+      const qty = item.quantity ?? 1;
+      const unitPrice = item.unitPrice ?? 0;
+      const discountPercent = item.discountPercent ?? 0;
+      const discount = item.discount ?? (qty * unitPrice * discountPercent) / 100;
+      const taxableAmount = qty * unitPrice - discount;
       const taxPercent = item.taxPercent ?? 18;
-      const taxableAmount = unitPrice * qty - discountAmount;
-      const taxAmount = parseFloat(
-        ((taxableAmount * taxPercent) / 100).toFixed(2),
-      );
-      const totalAmount = parseFloat((taxableAmount + taxAmount).toFixed(2));
+      const taxAmount = (taxableAmount * taxPercent) / 100;
+      const totalAmount = taxableAmount + taxAmount;
 
-      subtotal += unitPrice * qty;
-      totalDiscount += discountAmount;
+      subtotal += qty * unitPrice;
+      totalDiscount += discount;
       totalTax += taxAmount;
 
       return {
-        procedureId: item.procedureId || null,
+        procedureId: item.procedureId ?? null,
         description: item.description,
         quantity: qty,
         unitPrice,
-        discount: parseFloat(discountAmount.toFixed(2)),
-        discountPercent: item.discountPercent ?? 0,
+        discount,
+        discountPercent,
         taxPercent,
         taxAmount,
         totalAmount,
       };
     });
 
-    const grandTotal = parseFloat(
-      (subtotal - totalDiscount + totalTax).toFixed(2),
-    );
-    return {
-      items: calculated,
-      subtotal: parseFloat(subtotal.toFixed(2)),
-      totalDiscount: parseFloat(totalDiscount.toFixed(2)),
-      totalTax: parseFloat(totalTax.toFixed(2)),
-      grandTotal,
-    };
-  }
-
-  // ─── Procedures ─────────────────────────────────────────────────────────────
-  async createProcedure(
-    tenantId: string,
-    dto: Partial<Procedure>,
-  ): Promise<Procedure> {
-    return this.prisma.procedure.create({
-      data: {
-        ...(dto as any),
-        tenantId,
-      },
-    });
-  }
-
-  async getProcedures(tenantId: string) {
-    return this.prisma.procedure.findMany({
-      where: { tenantId, isActive: true },
-    });
-  }
-
-  async updateProcedure(
-    tenantId: string,
-    id: string,
-    dto: Partial<Procedure>,
-  ): Promise<Procedure> {
-    try {
-      return await this.prisma.procedure.update({
-        where: { id },
-        data: dto as any,
-      });
-    } catch (error) {
-      throw new NotFoundException('Procedure not found');
-    }
-  }
-
-  async deleteProcedure(tenantId: string, id: string): Promise<void> {
-    await this.prisma.procedure.update({
-      where: { id },
-      data: { isActive: false },
-    });
-  }
-
-  // ─── Invoices ───────────────────────────────────────────────────────────────
-  async createInvoice(
-    tenantId: string,
-    userId: string,
-    dto: CreateInvoiceDto,
-  ): Promise<Invoice> {
-    const invoiceNumber = await this.generateInvoiceNumber(tenantId);
-    const { items, subtotal, totalDiscount, totalTax, grandTotal } =
-      this.calculateLineItems(dto.lineItems);
-    const advanceUsed = dto.advanceUsed ?? 0;
-    const paidAmount = advanceUsed;
-    const pendingAmount = parseFloat((grandTotal - paidAmount).toFixed(2));
+    const grandTotal = subtotal - totalDiscount + totalTax;
 
     return this.prisma.invoice.create({
       data: {
         tenantId,
-        invoiceNumber,
         patientId: dto.patientId,
         doctorId: dto.doctorId,
-        appointmentId: dto.appointmentId || null,
+        appointmentId: dto.appointmentId ?? null,
+        invoiceNumber,
+        status: InvoiceStatus.DRAFT,
         subtotal,
         totalDiscount,
         totalTax,
         grandTotal,
-        paidAmount,
-        pendingAmount,
-        advanceUsed,
+        paidAmount: 0,
+        pendingAmount: grandTotal,
         notes: dto.notes,
         createdByUserId: userId,
         lineItems: {
-          create: items,
+          create: lineItems,
         },
       },
       include: {
-        lineItems: true,
+        lineItems: {
+          include: {
+            procedure: true,
+          },
+        },
       },
     });
   }
@@ -189,27 +159,15 @@ export class BillingService {
   async getInvoices(
     tenantId: string,
     pagination: PaginationDto,
-    filters: {
-      status?: InvoiceStatus;
-      patientId?: string;
-      doctorId?: string;
-      from?: string;
-      to?: string;
-    },
+    filters?: { status?: string; patientId?: string; doctorId?: string },
   ) {
-    const where: any = { tenantId };
-    if (filters.status) where.status = filters.status;
-    if (filters.patientId) where.patientId = filters.patientId;
-    if (filters.doctorId) where.doctorId = filters.doctorId;
-    if (filters.from || filters.to) {
-      where.createdAt = {
-        ...(filters.from ? { gte: new Date(filters.from) } : {}),
-        ...(filters.to ? { lte: new Date(filters.to + 'T23:59:59') } : {}),
-      };
-    }
-
     const { page = 1, limit = 20 } = pagination;
     const skip = (page - 1) * limit;
+
+    const where: Prisma.InvoiceWhereInput = { tenantId };
+    if (filters?.status) where.status = filters.status as InvoiceStatus;
+    if (filters?.patientId) where.patientId = filters.patientId;
+    if (filters?.doctorId) where.doctorId = filters.doctorId;
 
     const [data, total] = await Promise.all([
       this.prisma.invoice.findMany({
@@ -217,6 +175,7 @@ export class BillingService {
         include: {
           patient: { select: { name: true, phone: true, patientId: true } },
           doctor: { select: { name: true, email: true } },
+          appointment: { select: { date: true, startTime: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -224,300 +183,129 @@ export class BillingService {
       }),
       this.prisma.invoice.count({ where }),
     ]);
+
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async getInvoice(tenantId: string, id: string): Promise<Invoice> {
-    const invoice = await this.prisma.invoice.findFirst({
-      where: { id, tenantId },
-      include: {
-        patient: { select: { name: true, phone: true, patientId: true } },
-        doctor: { select: { name: true, email: true } },
-        lineItems: {
-          include: { procedure: { select: { name: true, code: true } } },
-        },
-        payments: true,
-      },
-    });
-    if (!invoice) throw new NotFoundException('Invoice not found');
-    return invoice;
-  }
-
-  async issueInvoice(tenantId: string, id: string): Promise<Invoice> {
-    const invoice = await this.prisma.invoice.update({
+  async getInvoice(tenantId: string, id: string) {
+    const invoice = await this.prisma.invoice.findUnique({
       where: { id },
-      data: { status: InvoiceStatus.ISSUED },
       include: {
-        patient: { select: { name: true, phone: true, email: true, patientId: true } },
-        doctor: { select: { name: true } },
-        lineItems: true,
-        payments: true,
+        lineItems: {
+          include: {
+            procedure: true,
+          },
+        },
+        payments: {
+          include: {
+            recordedByUser: { select: { name: true } },
+          },
+        },
+        patient: { select: { name: true, phone: true, patientId: true, address: true } },
+        doctor: { select: { name: true, email: true } },
+        appointment: { select: { date: true, startTime: true } },
+        createdByUser: { select: { name: true } },
       },
     });
 
-    if (!invoice) throw new NotFoundException('Invoice not found');
-
-    const patient = invoice.patient as any;
-
-    this.generateAndSavePdf(tenantId, invoice as any).then((pdfUrl) => {
-      this.emailService.sendInvoiceEmail({
-        patientName: patient?.name ?? '',
-        patientEmail: patient?.email ?? '',
-        clinicName: this.getClinicInfo().clinicName,
-        invoiceNumber: invoice.invoiceNumber,
-        invoiceDate: new Date(invoice.createdAt).toLocaleDateString('en-IN'),
-        grandTotal: invoice.grandTotal,
-        pdfUrl,
-        lineItems: (invoice as any).lineItems,
-      }).catch(err => this.logger.error(`Failed to send invoice email: ${err.message}`));
-    }).catch((err) =>
-      this.logger.error(`PDF generation failed for ${id}: ${err.message}`),
-    );
-
-    return invoice;
-  }
-
-  async sendReminder(tenantId: string, id: string) {
-    const invoice = await this.getInvoice(tenantId, id);
-    const patient = (invoice as any).patient;
-    if (!patient?.email) throw new BadRequestException('Patient has no email');
-
-    let pdfUrl = invoice.pdfUrl;
-    if (!pdfUrl) {
-      pdfUrl = await this.generateAndSavePdf(tenantId, invoice as any);
+    if (!invoice || invoice.tenantId !== tenantId) {
+      throw new NotFoundException('Invoice not found');
     }
 
-    await this.emailService.sendInvoiceEmail({
-      patientName: patient.name,
-      patientEmail: patient.email,
-      clinicName: this.getClinicInfo().clinicName,
-      invoiceNumber: invoice.invoiceNumber,
-      invoiceDate: new Date(invoice.createdAt).toLocaleDateString('en-IN'),
-      grandTotal: invoice.grandTotal,
-      pdfUrl: pdfUrl as string,
-      lineItems: (invoice as any).lineItems || [],
-    });
-
-    return { success: true, message: 'Reminder sent' };
+    return invoice;
   }
 
-  private async generateAndSavePdf(tenantId: string, invoice: any) {
-    const patient = invoice.patient;
-    const clinic = this.getClinicInfo();
-    const pdfBuffer = await this.pdfService.generateInvoice({
-      invoiceNumber: invoice.invoiceNumber,
-      invoiceDate: new Date(invoice.createdAt).toLocaleDateString('en-IN'),
-      clinicName: clinic.clinicName,
-      clinicAddress: clinic.clinicAddress,
-      clinicPhone: clinic.clinicPhone,
-      clinicGstin: clinic.clinicGstin,
-      patientName: patient?.name ?? '',
-      patientId: patient?.patientId ?? '',
-      patientPhone: patient?.phone ?? '',
-      lineItems: invoice.lineItems || [],
-      subtotal: invoice.subtotal,
-      totalDiscount: invoice.totalDiscount,
-      totalTax: invoice.totalTax,
-      grandTotal: invoice.grandTotal,
-      paidAmount: invoice.paidAmount,
-      pendingAmount: invoice.pendingAmount,
-      payments: (invoice.payments || []).map((p: any) => ({
-        amount: p.amount,
-        mode: p.mode,
-        paidAt: new Date(p.paidAt).toLocaleDateString('en-IN'),
-      })),
-    });
-
-    const pdfUrl = await this.storageService.uploadInvoicePDF(
-      tenantId,
-      invoice.id,
-      pdfBuffer,
-    );
-
-    await this.prisma.invoice.update({
-      where: { id: invoice.id },
-      data: { pdfUrl },
-    });
-    return pdfUrl;
-  }
-
-  async recordPayment(
-    tenantId: string,
-    id: string,
-    userId: string,
-    dto: RecordPaymentDto,
-  ): Promise<Invoice> {
-    const invoice = await this.prisma.invoice.findFirst({
-      where: { id, tenantId },
-    });
-    if (!invoice) throw new NotFoundException('Invoice not found');
-
-    const newPaidAmount = parseFloat((invoice.paidAmount + dto.amount).toFixed(2));
-    const newPendingAmount = parseFloat((invoice.grandTotal - newPaidAmount).toFixed(2));
-
-    let newStatus = invoice.status;
-    if (newPendingAmount <= 0) newStatus = InvoiceStatus.PAID;
-    else if (newPaidAmount > 0) newStatus = InvoiceStatus.PARTIALLY_PAID;
+  async updateInvoice(tenantId: string, id: string, dto: UpdateInvoiceDto) {
+    await this.getInvoice(tenantId, id);
 
     return this.prisma.invoice.update({
       where: { id },
       data: {
-        paidAmount: newPaidAmount,
-        pendingAmount: Math.max(0, newPendingAmount),
-        status: newStatus,
-        payments: {
-          create: {
-            amount: dto.amount,
-            mode: dto.mode as PaymentMode,
-            reference: dto.reference,
-            recordedByUserId: userId,
-          },
-        },
-      },
-      include: {
-        payments: true,
+        ...(dto.notes !== undefined && { notes: dto.notes }),
+        ...(dto.status !== undefined && { status: dto.status as InvoiceStatus }),
       },
     });
   }
 
-  async cancelInvoice(tenantId: string, id: string, reason?: string): Promise<Invoice> {
+  async cancelInvoice(tenantId: string, id: string, reason?: string) {
+    const invoice = await this.getInvoice(tenantId, id);
+    if (invoice.status === InvoiceStatus.PAID) {
+      throw new BadRequestException('Cannot cancel a paid invoice');
+    }
+
     return this.prisma.invoice.update({
       where: { id },
-      data: { status: InvoiceStatus.CANCELLED, notes: reason },
+      data: {
+        status: InvoiceStatus.CANCELLED,
+        notes: reason ? `${invoice.notes || ''}\n\nCancelled: ${reason}` : invoice.notes,
+      },
     });
   }
 
-  async getInvoicePdf(tenantId: string, id: string): Promise<string> {
-    const invoice = await this.getInvoice(tenantId, id);
-    if (invoice.pdfUrl) {
-      const filePath = invoice.pdfUrl.split(`storage.googleapis.com/`)[1];
-      return this.storageService.getSignedUrl(filePath.split('/').slice(1).join('/'));
-    }
-    return await this.generateAndSavePdf(tenantId, invoice);
-  }
+  // ─── Payments ──────────────────────────────────────────────────────────────────
+  async recordPayment(tenantId: string, userId: string, invoiceId: string, dto: RecordPaymentDto) {
+    const invoice = await this.getInvoice(tenantId, invoiceId);
+    const paymentAmount = Math.min(dto.amount, invoice.pendingAmount);
 
-  async downloadInvoicePdf(tenantId: string, id: string) {
-    const invoice = await this.getInvoice(tenantId, id);
-    const buffer = await this.pdfService.generateInvoice({
-      ...this.getClinicInfo(),
-      invoiceNumber: invoice.invoiceNumber,
-      invoiceDate: new Date(invoice.createdAt).toLocaleDateString('en-IN'),
-      patientName: (invoice as any).patient?.name || 'Patient',
-      patientId: (invoice as any).patient?.patientId || id,
-      patientPhone: (invoice as any).patient?.phone || '',
-      lineItems: (invoice as any).lineItems || [],
-      subtotal: invoice.subtotal,
-      totalDiscount: invoice.totalDiscount,
-      totalTax: invoice.totalTax,
-      grandTotal: invoice.grandTotal,
-      paidAmount: invoice.paidAmount,
-      pendingAmount: invoice.pendingAmount,
-      payments: (invoice as any).payments.map((p: any) => ({
-        amount: p.amount,
-        mode: p.mode,
-        paidAt: new Date(p.paidAt).toLocaleDateString('en-IN'),
-      })),
+    const payment = await this.prisma.invoicePayment.create({
+      data: {
+        invoiceId,
+        amount: paymentAmount,
+        mode: dto.mode ?? PaymentMode.CASH,
+        reference: dto.reference,
+        recordedByUserId: userId,
+      },
     });
 
-    return { buffer, filename: `invoice-${invoice.invoiceNumber}.pdf` };
+    const newPaidAmount = invoice.paidAmount + paymentAmount;
+    const newPendingAmount = invoice.grandTotal - newPaidAmount;
+    const newStatus =
+      newPendingAmount <= 0 ? InvoiceStatus.PAID : InvoiceStatus.PARTIALLY_PAID;
+
+    await this.prisma.invoice.update({
+      where: { id: invoiceId },
+      data: {
+        paidAmount: newPaidAmount,
+        pendingAmount: newPendingAmount,
+        status: newStatus,
+      },
+    });
+
+    return payment;
   }
 
-  // ─── Advance Payments ──────────────────────────────────────────────────────
-  async createAdvancePayment(
-    tenantId: string,
-    userId: string,
-    dto: {
-      patientId: string;
-      amount: number;
-      mode: PaymentMode;
-      reference?: string;
-      notes?: string;
-    },
-  ): Promise<AdvancePayment> {
+  // ─── Advance Payments ─────────────────────────────────────────────────────────
+  async createAdvancePayment(tenantId: string, dto: CreateAdvanceDto) {
     return this.prisma.advancePayment.create({
       data: {
         tenantId,
         patientId: dto.patientId,
         amount: dto.amount,
         balanceAmount: dto.amount,
+        usedAmount: 0,
+        mode: dto.mode ?? PaymentMode.CASH,
         notes: dto.notes,
-        mode: dto.mode,
       },
     });
   }
 
-  async getAdvanceBalance(tenantId: string, patientId: string) {
+  async getAdvancePayments(tenantId: string, patientId?: string) {
+    const where: Prisma.AdvancePaymentWhereInput = { tenantId };
+    if (patientId) where.patientId = patientId;
+
     return this.prisma.advancePayment.findMany({
-      where: { tenantId, patientId },
-    });
-  }
-
-  async useAdvance(
-    tenantId: string,
-    advanceId: string,
-    invoiceId: string,
-    amount: number,
-  ): Promise<void> {
-    const advance = await this.prisma.advancePayment.findFirst({
-      where: { id: advanceId, tenantId },
-    });
-    if (!advance) throw new NotFoundException('Advance payment not found');
-    if (advance.balanceAmount < amount)
-      throw new BadRequestException('Insufficient advance balance');
-
-    await this.prisma.$transaction([
-      this.prisma.advancePayment.update({
-        where: { id: advanceId },
-        data: {
-          balanceAmount: { decrement: amount },
-          usedAmount: { increment: amount },
-        },
-      }),
-      this.prisma.invoice.update({
-        where: { id: invoiceId },
-        data: {
-          advanceUsed: { increment: amount },
-          paidAmount: { increment: amount },
-          pendingAmount: { decrement: amount },
-        },
-      }),
-    ]);
-  }
-
-  async refundInvoice(tenantId: string, id: string, reason?: string): Promise<Invoice> {
-    return this.prisma.invoice.update({
-      where: { id },
-      data: { status: InvoiceStatus.REFUNDED, notes: reason },
-    });
-  }
-
-  async updateInvoice(
-    tenantId: string,
-    id: string,
-    dto: CreateInvoiceDto,
-  ): Promise<Invoice> {
-    const { items, subtotal, totalDiscount, totalTax, grandTotal } =
-      this.calculateLineItems(dto.lineItems);
-    
-    // For simplicity in this migration, we delete old items and recreate new ones
-    await this.prisma.invoiceItem.deleteMany({ where: { invoiceId: id } });
-
-    return this.prisma.invoice.update({
-      where: { id },
-      data: {
-        patientId: dto.patientId,
-        doctorId: dto.doctorId,
-        appointmentId: dto.appointmentId || null,
-        subtotal,
-        totalDiscount,
-        totalTax,
-        grandTotal,
-        notes: dto.notes,
-        pdfUrl: null,
-        lineItems: {
-          create: items,
-        },
+      where,
+      include: {
+        patient: { select: { name: true, phone: true, patientId: true } },
       },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getPatientAdvances(tenantId: string, patientId: string) {
+    return this.prisma.advancePayment.findMany({
+      where: { tenantId, patientId, balanceAmount: { gt: 0 } },
+      orderBy: { createdAt: 'asc' },
     });
   }
 }

@@ -40,7 +40,7 @@ export class AppointmentsController {
   @Post()
   @ApiOperation({ summary: 'Create appointment' })
   create(@Request() req: any, @Body() dto: CreateAppointmentDto) {
-    return this.appointmentsService.create(req.tenantId, req.user.sub, dto);
+    return this.appointmentsService.create(req.tenantId, req.user.id, dto);
   }
 
   @Get()

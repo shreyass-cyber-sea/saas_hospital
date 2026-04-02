@@ -38,13 +38,39 @@ export class PatientsService {
     dto: CreatePatientDto,
   ): Promise<Patient> {
     const patientId = await this.generatePatientId(tenantId);
+    const address =
+      typeof dto.address === 'string'
+        ? dto.address
+        : dto.address
+          ? [dto.address.street, dto.address.city, dto.address.pincode]
+              .filter(Boolean)
+              .join(', ')
+          : undefined;
+    const medicalHistory = [
+      ...(Array.isArray(dto.allergies) ? dto.allergies : []),
+      ...(typeof dto.medicalHistory === 'string'
+        ? dto.medicalHistory
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean)
+        : []),
+    ];
+
     return this.prisma.patient.create({
       data: {
-        ...(dto as any),
         tenantId,
         patientId,
-        firstVisit: new Date(),
-        createdByUserId: userId,
+        name: dto.name,
+        email: dto.email,
+        phone: dto.phone,
+        gender: dto.gender as Gender | undefined,
+        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
+        address,
+        bloodGroup: dto.bloodGroup,
+        photoUrl: dto.photoUrl,
+        emergencyContact: dto.emergencyContact as any,
+        medicalHistory,
+        lastVisit: new Date(),
       },
     });
   }
@@ -116,10 +142,41 @@ export class PatientsService {
     id: string,
     dto: UpdatePatientDto,
   ): Promise<Patient> {
+    const address =
+      typeof dto.address === 'string'
+        ? dto.address
+        : dto.address
+          ? [dto.address.street, dto.address.city, dto.address.pincode]
+              .filter(Boolean)
+              .join(', ')
+          : undefined;
+    const medicalHistory =
+      typeof dto.medicalHistory === 'string'
+        ? dto.medicalHistory
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean)
+        : dto.medicalHistory;
+
     try {
       return await this.prisma.patient.update({
         where: { id },
-        data: dto as any,
+        data: {
+          ...(dto.name !== undefined ? { name: dto.name } : {}),
+          ...(dto.phone !== undefined ? { phone: dto.phone } : {}),
+          ...(dto.email !== undefined ? { email: dto.email } : {}),
+          ...(dto.dateOfBirth !== undefined
+            ? { dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : null }
+            : {}),
+          ...(dto.gender !== undefined ? { gender: dto.gender as Gender | undefined } : {}),
+          ...(address !== undefined ? { address } : {}),
+          ...(dto.bloodGroup !== undefined ? { bloodGroup: dto.bloodGroup } : {}),
+          ...(dto.photoUrl !== undefined ? { photoUrl: dto.photoUrl } : {}),
+          ...(dto.emergencyContact !== undefined
+            ? { emergencyContact: dto.emergencyContact as any }
+            : {}),
+          ...(medicalHistory !== undefined ? { medicalHistory: medicalHistory as any } : {}),
+        },
       });
     } catch (error) {
       throw new NotFoundException('Patient not found');

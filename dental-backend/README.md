@@ -13,8 +13,8 @@ You are acting as **Person 1 (Lead Architect)**. Your goal is to build the found
 ### 🛠 TECH STACK & INSTALLATION
 **Execute these commands first:**
 ```bash
-npm install @nestjs/mongoose mongoose @nestjs/jwt @nestjs/passport passport passport-jwt @nestjs/config @nestjs/swagger swagger-ui-express class-validator class-transformer bcrypt uuid slugify helmet compression
-npm install -D @types/bcrypt @types/passport-jwt @types/uuid.
+npm install @nestjs/jwt @nestjs/passport passport passport-jwt @nestjs/config @nestjs/swagger swagger-ui-express class-validator class-transformer bcrypt uuid slugify helmet compression @prisma/client
+npm install -D prisma @types/bcrypt @types/passport-jwt @types/uuid.
 
 ARCHITECTURE & CODING STANDARDS:
 
@@ -42,18 +42,18 @@ src/
 │   └── types/                   # express.d.ts (extends Request)
 ├── config/                      # configuration.ts (Env mapping)
 └── modules/
-    ├── database/                # MongooseModule.forRootAsync
+    ├── database/                # Prisma service and client
     ├── tenant/                  # Registration, Settings, Slugify logic
     ├── auth/                    # JWT Strategy, Login, Register
     └── users/                   # CRUD for Clinic Staff
 
 SCHEMAS & LOGIC DETAILS:
 
-​1. Tenant Schema (Collection: tenants)
+​1. Tenant Schema (Table: Tenant)
 ​name, slug (auto-generated via slugify), plan (FREE, BASIC, PRO), isActive.
 ​settings: workingHours, workingDays, appointmentDuration, currency.
-​2. User Schema (Collection: users)
-​tenantId (ObjectId, Ref: Tenant, Indexed).
+​2. User Schema (Table: User)
+​tenantId (String, Ref: Tenant, Indexed).
 ​role (Enum), passwordHash (select: false).
 ​doctorProfile: Only for DOCTOR role (specialization, registrationNumber).
 ​3. Auth Logic
@@ -62,6 +62,6 @@ SCHEMAS & LOGIC DETAILS:
 
 LOCAL DEVELOPMENT SETUP:
 
-​Database: Ensure a local MongoDB instance is running at mongodb://localhost:27017/dental_saas.
-​Environment: Create a .env file with MONGODB_URI, JWT_SECRET, and PORT=3001.
+​Database: Ensure you have a PostgreSQL instance running either locally or via Supabase (as configured in Prisma schema).
+​Environment: Create a .env file with DATABASE_URL, JWT_SECRET, and PORT=3001.
 ​Swagger: Available at http://localhost:3001/api/docs once the server starts.

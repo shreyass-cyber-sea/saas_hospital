@@ -43,14 +43,14 @@ export function EditInvoice() {
     // Populate form from loaded invoice
     useEffect(() => {
         if (invoice && !initialized) {
-            setSelectedPatientId(invoice.patientId?._id || invoice.patientId || '');
-            setSelectedDoctorId(invoice.doctorId?._id || invoice.doctorId || '');
+            setSelectedPatientId(invoice.patient?.id || invoice.patientId?.id || invoice.patientId?._id || invoice.patientId || '');
+            setSelectedDoctorId(invoice.doctor?.id || invoice.doctorId?.id || invoice.doctorId?._id || invoice.doctorId || '');
             setNotes(invoice.notes || '');
             setApplyGst((invoice.lineItems?.[0]?.taxPercent ?? 18) > 0);
             setLineItems(
                 (invoice.lineItems || []).map((item: any, i: number) => ({
                     id: `existing-${i}`,
-                    procedureId: item.procedureId?._id || item.procedureId,
+                    procedureId: item.procedureId?.id || item.procedureId?._id || item.procedureId,
                     description: item.description || '',
                     quantity: item.quantity || 1,
                     unitPrice: item.unitPrice || 0,
@@ -80,7 +80,7 @@ export function EditInvoice() {
             if (item.id !== itemId) return item;
             const updated = { ...item, ...updates };
             if (updates.procedureId) {
-                const proc = procedures.find((p: any) => p._id === updates.procedureId);
+                const proc = procedures.find((p: any) => (p.id ?? p._id) === updates.procedureId);
                 if (proc) {
                     updated.description = (proc as any).name;
                     updated.unitPrice = (proc as any).basePrice || 0;
@@ -164,7 +164,7 @@ export function EditInvoice() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {patients.map((p: any) => (
-                                        <SelectItem key={p._id} value={p._id}>
+                                        <SelectItem key={p.id ?? p._id} value={p.id ?? p._id}>
                                             <div className="flex flex-col items-start">
                                                 <span className="font-medium">{p.name}</span>
                                                 <span className="text-xs text-slate-400">{p.phone}</span>
@@ -184,7 +184,7 @@ export function EditInvoice() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {doctors.map((d: any) => (
-                                        <SelectItem key={d._id} value={d._id}>
+                                        <SelectItem key={d.id ?? d._id} value={d.id ?? d._id}>
                                             {d.name} ({d.role})
                                         </SelectItem>
                                     ))}
@@ -229,7 +229,7 @@ export function EditInvoice() {
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {procedures.map((p: any) => (
-                                                            <SelectItem key={p._id} value={p._id}>{p.name}</SelectItem>
+                                                            <SelectItem key={p.id ?? p._id} value={p.id ?? p._id}>{p.name}</SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>

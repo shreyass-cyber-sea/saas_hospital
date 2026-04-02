@@ -32,6 +32,11 @@ model Tenant {
   doctorLeaves    DoctorLeave[]
   advancePayments AdvancePayment[]
   documents       PatientDocument[]
+  inventoryItems  InventoryItem[]
+  stockTransactions StockTransaction[]
+  labCases        LabCase[]
+  whatsappSessions WhatsAppSession[]
+  whatsappPhoneMappings WhatsAppPhoneMapping[]
 }
 
 enum TenantSubscription {
@@ -64,6 +69,8 @@ model User {
   clinicalNotes          ClinicalNote[]
   doctorLeaves           DoctorLeave[]
   paymentRecords         InvoicePayment[]
+  stockTransactions      StockTransaction[]
+  labCases               LabCase[]
 }
 
 enum Role {
@@ -100,6 +107,10 @@ model Patient {
   documents        PatientDocument[]
   invoices         Invoice[]
   advancePayments  AdvancePayment[]
+  labCases         LabCase[]
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, phone])
 }
 
 enum Gender {
@@ -167,6 +178,10 @@ model Appointment {
   updatedAt       DateTime          @updatedAt
 
   invoices        Invoice[]
+
+  @@index([tenantId, date])
+  @@index([tenantId, doctorId, date])
+  @@index([tenantId, status])
 }
 
 enum AppointmentStatus {
@@ -235,6 +250,10 @@ model Invoice {
 
   lineItems       InvoiceItem[]
   payments        InvoicePayment[]
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, status])
+  @@index([tenantId, patientId])
 }
 
 enum InvoiceStatus {
@@ -295,4 +314,125 @@ model AdvancePayment {
   notes         String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+}
+
+// === Inventory Management ===
+
+model InventoryItem {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  name          String
+  sku           String?
+  category      String?  // consumable, instrument, implant, material, other
+  description   String?
+  unit          String   @default("piece") // piece, box, ml, gm, tube, pack
+  currentStock  Float    @default(0)
+  minimumStock  Float    @default(0)
+  unitCost      Float    @default(0)
+  sellingPrice  Float    @default(0)
+  supplier      String?
+  supplierPhone String?
+  location      String?  // shelf/cabinet location
+  expiryDate    DateTime?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  transactions  StockTransaction[]
+
+  @@index([tenantId, isActive])
+  @@index([tenantId, category])
+}
+
+enum TransactionType {
+  PURCHASE
+  USAGE
+  RETURN
+  ADJUSTMENT
+  DISPOSAL
+}
+
+model StockTransaction {
+  id            String         @id @default(uuid())
+  tenantId      String
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  itemId        String
+  item          InventoryItem  @relation(fields: [itemId], references: [id])
+  type          TransactionType
+  quantity      Float          // positive for IN, negative for OUT
+  unitCost      Float          @default(0)
+  totalCost     Float          @default(0)
+  referenceNote String?
+  patientId     String?
+  performedById String
+  performedBy   User           @relation(fields: [performedById], references: [id])
+  createdAt     DateTime       @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, itemId])
+}
+
+model LabCase {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  patientId     String?
+  patient       Patient? @relation(fields: [patientId], references: [id])
+  doctorId      String
+  doctor        User     @relation(fields: [doctorId], references: [id])
+  caseType      String   // crown, bridge, denture, aligner, other
+  description   String?
+  shade         String?
+  labName       String?
+  sentDate      DateTime @default(now())
+  expectedDate  DateTime?
+  deliveredDate DateTime?
+  status        String   @default("SENT") // SENT, IN_PROGRESS, RECEIVED, REMADE
+  cost          Float    @default(0)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// === WhatsApp Module (PostgreSQL) ===
+
+enum WhatsAppSessionState {
+  IDLE
+  SELECTING_DOCTOR
+  SELECTING_DATE
+  SELECTING_SLOT
+  ENTERING_PATIENT_NAME
+  ENTERING_PATIENT_PHONE
+  AWAITING_NAME
+  AWAITING_DATE
+  AWAITING_DOCTOR_CHOICE
+  AWAITING_SLOT
+  BOOKING_CONFIRM
+  RESCHEDULE_SELECT
+  CANCEL_SELECT
+}
+
+model WhatsAppSession {
+  id              String               @id @default(uuid())
+  tenantId        String
+  tenant          Tenant               @relation(fields: [tenantId], references: [id])
+  phone           String               // WhatsApp phone number
+  state           WhatsAppSessionState @default(IDLE)
+  context         Json?                // Stores flow context (doctorId, date, slot, etc.)
+  lastInteraction DateTime             @default(now())
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([phone, tenantId])
+}
+
+model WhatsAppPhoneMapping {
+  id                    String   @id @default(uuid())
+  tenantId              String
+  tenant                Tenant   @relation(fields: [tenantId], references: [id])
+  whatsappPhoneNumberId String   @unique // WhatsApp Business API phone number ID
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }

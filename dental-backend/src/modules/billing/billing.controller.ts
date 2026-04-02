@@ -9,17 +9,15 @@ import {
   Query,
   UseGuards,
   Request,
-  Res,
 } from '@nestjs/common';
 import { InvoiceStatus } from '@prisma/client';
 import {
   ApiBearerAuth,
   ApiOperation,
-  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { BillingService } from './billing.service';
-import { CreateInvoiceDto, RecordPaymentDto } from './billing.dto';
+import { CreateInvoiceDto, RecordPaymentDto, UpdateInvoiceDto, CreateAdvanceDto } from './billing.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -43,8 +41,8 @@ export class BillingController {
 
   @Get('procedures')
   @ApiOperation({ summary: 'List all procedures for tenant' })
-  getProcedures(@Request() req: any) {
-    return this.billingService.getProcedures(req.tenantId);
+  getProcedures(@Request() req: any, @Query() pagination: PaginationDto) {
+    return this.billingService.getProcedures(req.tenantId, pagination);
   }
 
   @Patch('procedures/:id')
@@ -69,7 +67,7 @@ export class BillingController {
   @Post('invoices')
   @ApiOperation({ summary: 'Create invoice (starts as DRAFT)' })
   createInvoice(@Request() req: any, @Body() dto: CreateInvoiceDto) {
-    return this.billingService.createInvoice(req.tenantId, req.user.sub, dto);
+    return this.billingService.createInvoice(req.tenantId, req.user.id, dto);
   }
 
   @Get('invoices')
@@ -87,8 +85,6 @@ export class BillingController {
       status: status as InvoiceStatus,
       patientId,
       doctorId,
-      from,
-      to,
     });
   }
 
@@ -96,20 +92,6 @@ export class BillingController {
   @ApiOperation({ summary: 'Get full invoice' })
   getInvoice(@Request() req: any, @Param('id') id: string) {
     return this.billingService.getInvoice(req.tenantId, id);
-  }
-
-  @Post('invoices/:id/issue')
-  @ApiOperation({
-    summary: 'Issue invoice (DRAFT → ISSUED) and trigger PDF generation',
-  })
-  issueInvoice(@Request() req: any, @Param('id') id: string) {
-    return this.billingService.issueInvoice(req.tenantId, id);
-  }
-
-  @Post('invoices/:id/remind')
-  @ApiOperation({ summary: 'Send email reminder for an invoice' })
-  sendReminder(@Request() req: any, @Param('id') id: string) {
-    return this.billingService.sendReminder(req.tenantId, id);
   }
 
   @Post('invoices/:id/payment')
@@ -121,8 +103,8 @@ export class BillingController {
   ) {
     return this.billingService.recordPayment(
       req.tenantId,
+      req.user.id,
       id,
-      req.user.sub,
       dto,
     );
   }
@@ -138,95 +120,29 @@ export class BillingController {
     return this.billingService.cancelInvoice(req.tenantId, id, reason);
   }
 
-  @Post('invoices/:id/refund')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Refund an invoice (sets status to REFUNDED)' })
-  refundInvoice(
-    @Request() req: any,
-    @Param('id') id: string,
-    @Query('reason') reason?: string,
-  ) {
-    return this.billingService.refundInvoice(req.tenantId, id, reason);
-  }
-
   @Patch('invoices/:id')
   @ApiOperation({ summary: 'Update a draft invoice' })
   updateInvoice(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() dto: CreateInvoiceDto,
+    @Body() dto: UpdateInvoiceDto,
   ) {
     return this.billingService.updateInvoice(req.tenantId, id, dto);
-  }
-
-  @Get('invoices/:id/pdf')
-  @ApiOperation({ summary: 'Get signed URL for invoice PDF' })
-  getInvoicePdf(@Request() req: any, @Param('id') id: string) {
-    return this.billingService.getInvoicePdf(req.tenantId, id);
-  }
-
-  @Get('invoices/:id/download')
-  @ApiOperation({ summary: 'Download invoice PDF as binary attachment' })
-  async downloadInvoicePdf(
-    @Request() req: any,
-    @Param('id') id: string,
-    @Res() res: any,
-  ) {
-    try {
-      const { buffer, filename } = await this.billingService.downloadInvoicePdf(
-        req.tenantId,
-        id,
-      );
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Content-Length': buffer.length.toString(),
-        'Cache-Control': 'no-store',
-      });
-      res.status(200).send(buffer);
-    } catch (error: any) {
-      console.error('Download PDF Error:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Failed to generate or download PDF', 
-        error: error.message,
-        stack: error.stack 
-      });
-    }
   }
 
   // ── Advance Payments ─────────────────────────────────────────────────────────
   @Post('advance-payments')
   @ApiOperation({ summary: 'Record advance payment from patient' })
-  createAdvance(@Request() req: any, @Body() dto: any) {
-    return this.billingService.createAdvancePayment(
-      req.tenantId,
-      req.user.sub,
-      dto,
-    );
+  createAdvance(@Request() req: any, @Body() dto: CreateAdvanceDto) {
+    return this.billingService.createAdvancePayment(req.tenantId, dto);
   }
 
   @Get('advance-payments/patient/:patientId')
-  @ApiOperation({ summary: 'Get advance balance for patient' })
-  getAdvanceBalance(
+  @ApiOperation({ summary: 'Get advance entries with available balance for patient' })
+  getPatientAdvances(
     @Request() req: any,
     @Param('patientId') patientId: string,
   ) {
-    return this.billingService.getAdvanceBalance(req.tenantId, patientId);
-  }
-
-  @Post('advance-payments/:id/use')
-  @ApiOperation({ summary: 'Apply advance payment against an invoice' })
-  useAdvance(
-    @Request() req: any,
-    @Param('id') id: string,
-    @Body() dto: { invoiceId: string; amount: number },
-  ) {
-    return this.billingService.useAdvance(
-      req.tenantId,
-      id,
-      dto.invoiceId,
-      dto.amount,
-    );
+    return this.billingService.getPatientAdvances(req.tenantId, patientId);
   }
 }
