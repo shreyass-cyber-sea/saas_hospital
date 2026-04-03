@@ -115,7 +115,7 @@ export function useIssueInvoice() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (id: string) => {
-            const res = await api.post(`/invoices/${id}/issue`);
+            const res = await api.patch(`/invoices/${id}`, { status: 'ISSUED' });
             return res.data;
         },
         onSuccess: () => {

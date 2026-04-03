@@ -132,7 +132,9 @@ export function NewInvoice() {
             }
             navigate('/billing');
         } catch (error: any) {
-            setSaveError(error?.response?.data?.message || 'Failed to create invoice. Please try again.');
+            const msg = error?.response?.data?.message;
+            const fullError = Array.isArray(msg) ? msg.join(', ') : (msg || 'Failed to create invoice. Please try again.');
+            setSaveError(fullError);
         }
     };
 

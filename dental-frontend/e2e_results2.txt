@@ -1,0 +1,69 @@
+
+> dental-frontend@0.0.0 test:e2e
+> playwright test
+
+
+Running 9 tests using 8 workers
+
+[1A[2K[1/9] [chromium] ΓÇ║ e2e\create-patient.spec.ts:13:5 ΓÇ║ Create Patient (Write Operation) ΓÇ║ should successfully register a new patient
+[1A[2K[2/9] [chromium] ΓÇ║ e2e\appointments.spec.ts:13:3 ΓÇ║ Appointments Calendar ΓÇ║ can load the dynamic appointments calendar
+[1A[2K[3/9] [chromium] ΓÇ║ e2e\create-invoice.spec.ts:13:5 ΓÇ║ Create Invoice (Write Operation) ΓÇ║ should successfully generate a new invoice
+[1A[2K[4/9] [chromium] ΓÇ║ e2e\auth.spec.ts:4:3 ΓÇ║ Authentication Flow ΓÇ║ successful login
+[1A[2K[5/9] [chromium] ΓÇ║ e2e\dashboard.spec.ts:13:3 ΓÇ║ Dashboard Navigation ΓÇ║ dashboard renders correctly and takes a screenshot
+[1A[2K[6/9] [chromium] ΓÇ║ e2e\billing.spec.ts:13:3 ΓÇ║ Billing & Financials ΓÇ║ can load the billing invoices list
+[1A[2K[7/9] [chromium] ΓÇ║ e2e\patients.spec.ts:15:3 ΓÇ║ Patients Navigation ΓÇ║ can navigate to patient directory and view UI
+[1A[2K[8/9] [chromium] ΓÇ║ e2e\inventory.spec.ts:13:3 ΓÇ║ Inventory Display ΓÇ║ can load the clinical inventory datagrid
+[1A[2K[9/9] [chromium] ΓÇ║ e2e\settings.spec.ts:13:3 ΓÇ║ Settings & Tenant Profile ΓÇ║ can load the clinic settings profile
+[1A[2K  1) [chromium] ΓÇ║ e2e\create-patient.spec.ts:13:5 ΓÇ║ Create Patient (Write Operation) ΓÇ║ should successfully register a new patient 
+
+    Error: locator.click: Error: strict mode violation: getByRole('button', { name: /Save Patient/i }) resolved to 2 elements:
+        1) <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700">ΓÇª</button> aka getByRole('button', { name: 'Save Patient' }).first()
+        2) <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-10 py-2 bg-blue-600 hover:bg-blue-700 px-8">ΓÇª</button> aka getByRole('button', { name: 'Save Patient' }).nth(1)
+
+    Call log:
+    [2m  - waiting for getByRole('button', { name: /Save Patient/i })[22m
+
+
+      34 |
+      35 |         // Save Patient
+    > 36 |         await page.getByRole('button', { name: /Save Patient/i }).click();
+         |                                                                   ^
+      37 |
+      38 |         // Should automatically redirect back to the patient directory on success
+      39 |         await expect(page).toHaveURL(/.*patients$/);
+        at E:\SaaS-Updated-main\dental-frontend\e2e\create-patient.spec.ts:36:67
+
+    Error Context: test-results\create-patient-Create-Pati-59917-ully-register-a-new-patient-chromium\error-context.md
+
+
+[1A[2K  2) [chromium] ΓÇ║ e2e\create-invoice.spec.ts:13:5 ΓÇ║ Create Invoice (Write Operation) ΓÇ║ should successfully generate a new invoice 
+
+    Error: [2mexpect([22m[31mpage[39m[2m).[22mtoHaveURL[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Expected pattern: [32m/.*billing$/[39m
+    Received string:  [31m"http://localhost:5173/billing/new"[39m
+    Timeout: 5000ms
+
+    Call log:
+    [2m  - Expect "toHaveURL" with timeout 5000ms[22m
+    [2m    9 ├ù unexpected value "http://localhost:5173/billing/new"[22m
+
+
+      41 |
+      42 |         // Should automatically redirect back to the billing main ledger on success
+    > 43 |         await expect(page).toHaveURL(/.*billing$/);
+         |                            ^
+      44 |
+      45 |         // Verify we are back on the billing page showing the table
+      46 |         await expect(page.locator('h1').filter({ hasText: 'Billing & Invoices' })).toBeVisible();
+        at E:\SaaS-Updated-main\dental-frontend\e2e\create-invoice.spec.ts:43:28
+
+    Error Context: test-results\create-invoice-Create-Invo-0a3a4-ully-generate-a-new-invoice-chromium\error-context.md
+
+
+[1A[2K  2 failed
+    [chromium] ΓÇ║ e2e\create-invoice.spec.ts:13:5 ΓÇ║ Create Invoice (Write Operation) ΓÇ║ should successfully generate a new invoice 
+    [chromium] ΓÇ║ e2e\create-patient.spec.ts:13:5 ΓÇ║ Create Patient (Write Operation) ΓÇ║ should successfully register a new patient 
+  7 passed (29.5s)
+
+[36m  Serving HTML report at http://localhost:53111. Press Ctrl+C to quit.[39m

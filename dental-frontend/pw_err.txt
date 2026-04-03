@@ -1,0 +1,32 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › e2e\create-patient.spec.ts:13:5 › Create Patient (Write Operation) › should successfully register a new patient (8.6s)
+
+
+  1) [chromium] › e2e\create-patient.spec.ts:13:5 › Create Patient (Write Operation) › should successfully register a new patient 
+
+    Error: [2mexpect([22m[31mpage[39m[2m).[22mtoHaveURL[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Expected pattern: [32m/.*patients$/[39m
+    Received string:  [31m"http://localhost:5173/patients/new"[39m
+    Timeout: 5000ms
+
+    Call log:
+    [2m  - Expect "toHaveURL" with timeout 5000ms[22m
+    [2m    9 × unexpected value "http://localhost:5173/patients/new"[22m
+
+
+      55 |
+      56 |         // Should automatically redirect back to the patient directory on success
+    > 57 |         await expect(page).toHaveURL(/.*patients$/);
+         |                            ^
+      58 |
+      59 |         // Verify the newly created patient appears in the directory table
+      60 |         const patientRowLocator = page.locator('table').getByText(testName);
+        at E:\SaaS-Updated-main\dental-frontend\e2e\create-patient.spec.ts:57:28
+
+    Error Context: test-results\create-patient-Create-Pati-59917-ully-register-a-new-patient-chromium\error-context.md
+
+  1 failed
+    [chromium] › e2e\create-patient.spec.ts:13:5 › Create Patient (Write Operation) › should successfully register a new patient 

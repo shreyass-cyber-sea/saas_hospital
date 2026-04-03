@@ -47,7 +47,9 @@ export function NewPatient() {
             });
             navigate('/patients');
         } catch (err: any) {
-            setError(err?.response?.data?.message || 'Failed to create patient. Please try again.');
+            const msg = err?.response?.data?.message;
+            const fullError = Array.isArray(msg) ? msg.join(', ') : (msg || 'Failed to create patient. Please try again.');
+            setError(fullError);
         }
     };
 
@@ -142,9 +144,9 @@ export function NewPatient() {
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                             >
                                 <option value="">Select gender...</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
+                                <option value="MALE">Male</option>
+                                <option value="FEMALE">Female</option>
+                                <option value="OTHER">Other</option>
                             </select>
                         </div>
 

@@ -1,0 +1,149 @@
+{
+  "config": {
+    "configFile": "E:\\SaaS-Updated-main\\dental-frontend\\playwright.config.ts",
+    "rootDir": "E:/SaaS-Updated-main/dental-frontend/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "E:/SaaS-Updated-main/dental-frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "E:/SaaS-Updated-main/dental-frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 8,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:5173",
+      "reuseExistingServer": true
+    }
+  },
+  "suites": [
+    {
+      "title": "create-invoice.spec.ts",
+      "file": "create-invoice.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Create Invoice (Write Operation)",
+          "file": "create-invoice.spec.ts",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should successfully generate a new invoice",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 6738,
+                      "error": {
+                        "message": "Error: Validation Error on UI: ⚠\nCannot POST /api/v1/invoices/b6710394-d55b-4804-bc27-53c6f15b7554/issue",
+                        "stack": "Error: Validation Error on UI: ⚠\nCannot POST /api/v1/invoices/b6710394-d55b-4804-bc27-53c6f15b7554/issue\n    at E:\\SaaS-Updated-main\\dental-frontend\\e2e\\create-invoice.spec.ts:47:19",
+                        "location": {
+                          "file": "E:\\SaaS-Updated-main\\dental-frontend\\e2e\\create-invoice.spec.ts",
+                          "column": 19,
+                          "line": 47
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 45 |\u001b[39m         \u001b[36mif\u001b[39m (\u001b[36mawait\u001b[39m errorBanner\u001b[33m.\u001b[39misVisible()) {\n \u001b[90m 46 |\u001b[39m             \u001b[36mconst\u001b[39m errorText \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m errorBanner\u001b[33m.\u001b[39minnerText()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 47 |\u001b[39m             \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`Validation Error on UI: ${errorText}`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 48 |\u001b[39m         }\n \u001b[90m 49 |\u001b[39m\n \u001b[90m 50 |\u001b[39m         \u001b[90m// Should automatically redirect back to the billing main ledger on success\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "E:\\SaaS-Updated-main\\dental-frontend\\e2e\\create-invoice.spec.ts",
+                            "column": 19,
+                            "line": 47
+                          },
+                          "message": "Error: Validation Error on UI: ⚠\nCannot POST /api/v1/invoices/b6710394-d55b-4804-bc27-53c6f15b7554/issue\n\n  45 |         if (await errorBanner.isVisible()) {\n  46 |             const errorText = await errorBanner.innerText();\n> 47 |             throw new Error(`Validation Error on UI: ${errorText}`);\n     |                   ^\n  48 |         }\n  49 |\n  50 |         // Should automatically redirect back to the billing main ledger on success\n    at E:\\SaaS-Updated-main\\dental-frontend\\e2e\\create-invoice.spec.ts:47:19"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-03T06:25:02.046Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "E:\\SaaS-Updated-main\\dental-frontend\\test-results\\create-invoice-Create-Invo-0a3a4-ully-generate-a-new-invoice-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "E:\\SaaS-Updated-main\\dental-frontend\\e2e\\create-invoice.spec.ts",
+                        "column": 19,
+                        "line": 47
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "85ca86036ed601ce70e3-17b01c09714befebf86b",
+              "file": "create-invoice.spec.ts",
+              "line": 13,
+              "column": 5
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-04-03T06:24:58.743Z",
+    "duration": 10578.85,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

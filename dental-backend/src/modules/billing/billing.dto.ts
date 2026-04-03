@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsEnum, Min } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsEnum, Min, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PaymentMode } from '@prisma/client';
 
@@ -72,6 +72,42 @@ export class UpdateProcedureDto {
   isActive?: boolean;
 }
 
+export class LineItemDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  procedureId?: string;
+
+  @ApiProperty()
+  @IsString()
+  description: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  quantity?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  unitPrice?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  discount?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  discountPercent?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  taxPercent?: number;
+}
+
 export class CreateInvoiceDto {
   @ApiProperty()
   @IsString()
@@ -86,16 +122,11 @@ export class CreateInvoiceDto {
   @IsString()
   appointmentId?: string;
 
-  @ApiProperty({ type: [Object] })
-  lineItems: {
-    procedureId?: string;
-    description: string;
-    quantity?: number;
-    unitPrice?: number;
-    discount?: number;
-    discountPercent?: number;
-    taxPercent?: number;
-  }[];
+  @ApiProperty({ type: [LineItemDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => LineItemDto)
+  lineItems: LineItemDto[];
 
   @ApiPropertyOptional()
   @IsOptional()
