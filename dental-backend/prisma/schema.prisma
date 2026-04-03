@@ -10,32 +10,32 @@ datasource db {
 // === Core Models ===
 
 model Tenant {
-  id              String           @id @default(uuid())
-  name            String
-  slug            String           @unique
-  address         Json?            // { street, city, state, zip }
-  phone           String?
-  email           String?
-  logo            String?
-  subscription    TenantSubscription?
-  isActive        Boolean          @default(true)
-  settings        Json?            // { workingHours, slotDuration, etc }
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id           String              @id @default(uuid())
+  name         String
+  slug         String              @unique
+  address      Json? // { street, city, state, zip }
+  phone        String?
+  email        String?
+  logo         String?
+  subscription TenantSubscription?
+  isActive     Boolean             @default(true)
+  settings     Json? // { workingHours, slotDuration, etc }
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
-  users           User[]
-  patients        Patient[]
-  appointments    Appointment[]
-  invoices        Invoice[]
-  procedures      Procedure[]
-  clinicalNotes   ClinicalNote[]
-  doctorLeaves    DoctorLeave[]
-  advancePayments AdvancePayment[]
-  documents       PatientDocument[]
-  inventoryItems  InventoryItem[]
-  stockTransactions StockTransaction[]
-  labCases        LabCase[]
-  whatsappSessions WhatsAppSession[]
+  users                 User[]
+  patients              Patient[]
+  appointments          Appointment[]
+  invoices              Invoice[]
+  procedures            Procedure[]
+  clinicalNotes         ClinicalNote[]
+  doctorLeaves          DoctorLeave[]
+  advancePayments       AdvancePayment[]
+  documents             PatientDocument[]
+  inventoryItems        InventoryItem[]
+  stockTransactions     StockTransaction[]
+  labCases              LabCase[]
+  whatsappSessions      WhatsAppSession[]
   whatsappPhoneMappings WhatsAppPhoneMapping[]
 }
 
@@ -47,30 +47,30 @@ enum TenantSubscription {
 }
 
 model User {
-  id               String   @id @default(uuid())
-  tenantId         String
-  tenant           Tenant   @relation(fields: [tenantId], references: [id])
-  name             String
-  email            String   @unique
-  password         String?
-  role             Role     @default(RECEPTIONIST)
-  phone            String?
-  avatar           String?
-  isActive         Boolean  @default(true)
-  doctorProfile    Json?    // { specializations: [], experience: 0, etc }
-  lastLogin        DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id            String    @id @default(uuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id])
+  name          String
+  email         String    @unique
+  password      String?
+  role          Role      @default(RECEPTIONIST)
+  phone         String?
+  avatar        String?
+  isActive      Boolean   @default(true)
+  doctorProfile Json? // { specializations: [], experience: 0, etc }
+  lastLogin     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  appointmentsAsDoctor   Appointment[] @relation("DoctorAppointments")
-  appointmentsAsCreator  Appointment[] @relation("CreatorAppointments")
-  invoicesAsDoctor       Invoice[]     @relation("DoctorInvoices")
-  invoicesAsCreator      Invoice[]     @relation("CreatorInvoices")
-  clinicalNotes          ClinicalNote[]
-  doctorLeaves           DoctorLeave[]
-  paymentRecords         InvoicePayment[]
-  stockTransactions      StockTransaction[]
-  labCases               LabCase[]
+  appointmentsAsDoctor  Appointment[]      @relation("DoctorAppointments")
+  appointmentsAsCreator Appointment[]      @relation("CreatorAppointments")
+  invoicesAsDoctor      Invoice[]          @relation("DoctorInvoices")
+  invoicesAsCreator     Invoice[]          @relation("CreatorInvoices")
+  clinicalNotes         ClinicalNote[]
+  doctorLeaves          DoctorLeave[]
+  paymentRecords        InvoicePayment[]
+  stockTransactions     StockTransaction[]
+  labCases              LabCase[]
 }
 
 enum Role {
@@ -96,18 +96,18 @@ model Patient {
   bloodGroup       String?
   photoUrl         String?
   medicalHistory   String[]
-  emergencyContact Json?     // { name, relation, phone }
+  emergencyContact Json? // { name, relation, phone }
   totalVisits      Int       @default(0)
   lastVisit        DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  appointments     Appointment[]
-  clinicalNotes    ClinicalNote[]
-  documents        PatientDocument[]
-  invoices         Invoice[]
-  advancePayments  AdvancePayment[]
-  labCases         LabCase[]
+  appointments    Appointment[]
+  clinicalNotes   ClinicalNote[]
+  documents       PatientDocument[]
+  invoices        Invoice[]
+  advancePayments AdvancePayment[]
+  labCases        LabCase[]
 
   @@index([tenantId, createdAt])
   @@index([tenantId, phone])
@@ -120,18 +120,18 @@ enum Gender {
 }
 
 model PatientDocument {
-  id          String   @id @default(uuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
-  patientId   String
-  patient     Patient  @relation(fields: [patientId], references: [id])
-  name        String
-  category    String   @default("report") // report, prescription, xray, scan, other
-  fileUrl     String
-  fileType    String?
-  fileSize    Int?
-  notes       String?
-  uploadedAt  DateTime @default(now())
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  patientId  String
+  patient    Patient  @relation(fields: [patientId], references: [id])
+  name       String
+  category   String   @default("report") // report, prescription, xray, scan, other
+  fileUrl    String
+  fileType   String?
+  fileSize   Int?
+  notes      String?
+  uploadedAt DateTime @default(now())
 }
 
 model ClinicalNote {
@@ -147,8 +147,8 @@ model ClinicalNote {
   findings         String?
   diagnosis        String?
   treatmentPlan    String?
-  prescriptions    Json[]   // [{ medicine, dosage, frequency, duration }]
-  vitals           Json?    // { bp, weight, pulse, etc }
+  prescriptions    Json[] // [{ medicine, dosage, frequency, duration }]
+  vitals           Json? // { bp, weight, pulse, etc }
   clinicalFindings Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -165,10 +165,10 @@ model Appointment {
   doctorId        String
   doctor          User              @relation("DoctorAppointments", fields: [doctorId], references: [id])
   date            DateTime
-  startTime       String            // HH:mm
-  endTime         String?           // HH:mm
+  startTime       String // HH:mm
+  endTime         String? // HH:mm
   status          AppointmentStatus @default(SCHEDULED)
-  type            String?           // Consultation, Follow-up, Routine Check, Procedure
+  type            String? // Consultation, Follow-up, Routine Check, Procedure
   chiefComplaint  String?
   tokenNumber     Int?
   cancelledReason String?
@@ -177,7 +177,7 @@ model Appointment {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
-  invoices        Invoice[]
+  invoices Invoice[]
 
   @@index([tenantId, date])
   @@index([tenantId, doctorId, date])
@@ -219,7 +219,7 @@ model Procedure {
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
 
-  invoiceItems    InvoiceItem[]
+  invoiceItems InvoiceItem[]
 }
 
 model Invoice {
@@ -248,8 +248,8 @@ model Invoice {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  lineItems       InvoiceItem[]
-  payments        InvoicePayment[]
+  lineItems InvoiceItem[]
+  payments  InvoicePayment[]
 
   @@index([tenantId, createdAt])
   @@index([tenantId, status])
@@ -319,27 +319,27 @@ model AdvancePayment {
 // === Inventory Management ===
 
 model InventoryItem {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  tenant        Tenant    @relation(fields: [tenantId], references: [id])
   name          String
   sku           String?
-  category      String?  // consumable, instrument, implant, material, other
+  category      String? // consumable, instrument, implant, material, other
   description   String?
-  unit          String   @default("piece") // piece, box, ml, gm, tube, pack
-  currentStock  Float    @default(0)
-  minimumStock  Float    @default(0)
-  unitCost      Float    @default(0)
-  sellingPrice  Float    @default(0)
+  unit          String    @default("piece") // piece, box, ml, gm, tube, pack
+  currentStock  Float     @default(0)
+  minimumStock  Float     @default(0)
+  unitCost      Float     @default(0)
+  sellingPrice  Float     @default(0)
   supplier      String?
   supplierPhone String?
-  location      String?  // shelf/cabinet location
+  location      String? // shelf/cabinet location
   expiryDate    DateTime?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  transactions  StockTransaction[]
+  transactions StockTransaction[]
 
   @@index([tenantId, isActive])
   @@index([tenantId, category])
@@ -354,45 +354,45 @@ enum TransactionType {
 }
 
 model StockTransaction {
-  id            String         @id @default(uuid())
+  id            String          @id @default(uuid())
   tenantId      String
-  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  tenant        Tenant          @relation(fields: [tenantId], references: [id])
   itemId        String
-  item          InventoryItem  @relation(fields: [itemId], references: [id])
+  item          InventoryItem   @relation(fields: [itemId], references: [id])
   type          TransactionType
-  quantity      Float          // positive for IN, negative for OUT
-  unitCost      Float          @default(0)
-  totalCost     Float          @default(0)
+  quantity      Float // positive for IN, negative for OUT
+  unitCost      Float           @default(0)
+  totalCost     Float           @default(0)
   referenceNote String?
   patientId     String?
   performedById String
-  performedBy   User           @relation(fields: [performedById], references: [id])
-  createdAt     DateTime       @default(now())
+  performedBy   User            @relation(fields: [performedById], references: [id])
+  createdAt     DateTime        @default(now())
 
   @@index([tenantId, createdAt])
   @@index([tenantId, itemId])
 }
 
 model LabCase {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  tenant        Tenant    @relation(fields: [tenantId], references: [id])
   patientId     String?
-  patient       Patient? @relation(fields: [patientId], references: [id])
+  patient       Patient?  @relation(fields: [patientId], references: [id])
   doctorId      String
-  doctor        User     @relation(fields: [doctorId], references: [id])
-  caseType      String   // crown, bridge, denture, aligner, other
+  doctor        User      @relation(fields: [doctorId], references: [id])
+  caseType      String // crown, bridge, denture, aligner, other
   description   String?
   shade         String?
   labName       String?
-  sentDate      DateTime @default(now())
+  sentDate      DateTime  @default(now())
   expectedDate  DateTime?
   deliveredDate DateTime?
-  status        String   @default("SENT") // SENT, IN_PROGRESS, RECEIVED, REMADE
-  cost          Float    @default(0)
+  status        String    @default("SENT") // SENT, IN_PROGRESS, RECEIVED, REMADE
+  cost          Float     @default(0)
   notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 // === WhatsApp Module (PostgreSQL) ===
@@ -417,9 +417,9 @@ model WhatsAppSession {
   id              String               @id @default(uuid())
   tenantId        String
   tenant          Tenant               @relation(fields: [tenantId], references: [id])
-  phone           String               // WhatsApp phone number
+  phone           String // WhatsApp phone number
   state           WhatsAppSessionState @default(IDLE)
-  context         Json?                // Stores flow context (doctorId, date, slot, etc.)
+  context         Json? // Stores flow context (doctorId, date, slot, etc.)
   lastInteraction DateTime             @default(now())
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
